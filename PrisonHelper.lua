@@ -10,7 +10,8 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.3.1')
+script_version('1.3.2')
+script_properties("work-in-pause")
 
 
 fftt = false
@@ -29,7 +30,7 @@ default = {
         hour = 0,
         fasttime = true,
         aupd = true,
-        adownload = true,
+        adownload = false,
         fastmenu = false,
         grafiktime = false
     }
@@ -187,8 +188,8 @@ function main()
     -- register commands
     sampRegisterChatCommand("jd", jd)
     sampRegisterChatCommand("prisonreload", reloader)
-    sampRegisterChatCommand("prisonupdate", function() lua_thread.create(function() updates() end) end)
-    sampRegisterChatCommand("prisonver", function() aupd = true lua_thread.create(function()apdeit() end) aupd = pris.aupd end)
+    sampRegisterChatCommand("prisonupdate", updates)
+    sampRegisterChatCommand("prisonver", apdeit)
     sampRegisterChatCommand("cam", cam)
     sampRegisterChatCommand("panel", panel)
     sampRegisterChatCommand("варн", warn)
@@ -210,7 +211,7 @@ function main()
     sampRegisterChatCommand("уведомления", function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end)
     sampRegisterChatCommand("prisonsetime", function() prisontime = true sampSendChat('/c 60') end)
 
-    sampAddChatMessage('PrisonHelper {01A0E9}успешно загружен', 0xFF7000)
+    sampAddChatMessage(teg..'Успешно загружен. Версия: {ff7000}' ..thisScript().version, -1)
 
     if pris.fasttime == true then lua_thread.create(napominalka) sampAddChatMessage(teg ..'Уведомления графика тюрьмы {00FF00}включены', - 1) end
     if pris.grafiktime == true then sampAddChatMessage(teg ..'Уведомления графика тюрьмы в /c 60 {00FF00}включены', - 1) end
@@ -636,13 +637,20 @@ end
 function apdeit()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelperVer', nil --[[параметры запроса]],
         function(resp) -- вызовется при успешном выполнении и получении ответа
-            ver, URL = resp.text:match('Ver = (.+), URL = (.+)')
-            if ver > thisScript().version then if adownload then updates() else sampAddChatMessage(teg..'Обнаружена новая версия скрипта. Для обновления введите /prisonupdate', - 1) end elseif thisScript().version > ver then sampAddChatMessage(teg..'Вы используете тестовую версию. Для возврата в стабильную версию введите /prisonupdate', - 1) elseif ver == thisScript().version then sampAddChatMessage(teg..'У вас актуальная версия скрипта', - 1) end
+            ver = resp.text:match('Version = (.+), URL.+')
+            if ver ~= nil then obrupd(ver) end
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
-            sampAddChatMessage(teg..'Ошибка проверки версии. Попробуйте позже', - 1)
+            sampAddChatMessage(teg ..'Ошибка поиска версии. Попробуйте позже.', - 1)
     end)
+end
+
+function obrupd(ver)
+    if thisScript().version < ver then if adownload then sampAddChatMessage(teg ..'Доступно новое обновление. {FF7000}Началась автоустановка', -1) updates() else sampAddChatMessage(teg..'Доступно новое обновление до версии {FF7000}' ..ver ..'{01A0E9}. Используйте {FF7000}/prisonupdate', - 1) end
+    elseif thisScript().version == ver then sampAddChatMessage(teg..'У вас актуальная версия скрипта', - 1)
+    elseif thisScript().version > ver then sampAddChatMessage(teg ..'У вас тестовая версия скрипта', - 1)
+    end
 end
 
 
@@ -652,10 +660,12 @@ function updates()
             f = io.open(getWorkingDirectory() ..'/PrisonHelper.lua', 'wb')
             f:write(u8:decode(respe.text))
             f:close()
+			sampAddChatMessage(teg ..'Обновление успешно скачалось. Скрипт перезапуститься автоматически', -1)
+			thisScript():reload()
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
-            sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте похже.', - 1)
+            sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже.', - 1)
     end)
 end
 
@@ -705,8 +715,8 @@ function checkmenu()
                     onclick = function() pris.aupd = not pris.aupd inicfg.save(default, 'PrisonHelper') sampAddChatMessage(string.format('%s Автообновление %s', teg, pris.aupd and '{00FF00}включено' or '{FF0000}выключено'), - 1) end
                 },
                 {
-                    title = string.format('%s Автоустановка скрипта скрипта: %s', fcolor, pris.adownload and '{00FF00}Вкп' or '{FF0000}Выкл'),
-                    onclick = function() pris.adownload = not pris.adownload inicfg.save(default, 'PrisonHelper') sampAddChatMessage(string.format('%s Автоустановка %s', teg, pris.adownload and '{00FF00}включена' or '{FF0000}выключена'), - 1) end
+                    title = string.format('%s Автоустановка обновления скрипта: %s', fcolor, pris.adownload and '{00FF00}Вкп' or '{FF0000}Выкл'),
+                    onclick = function() pris.adownload = not pris.adownload adownload = pris.adownload inicfg.save(default, 'PrisonHelper') sampAddChatMessage(string.format('%s Автоустановка %s', teg, pris.adownload and '{00FF00}включена' or '{FF0000}выключена'), - 1) end
                 },
                 {
                     title = string.format('%s Проверить наличие обновления', fcolor),
@@ -854,7 +864,7 @@ end
 
 
 function fastmenufunc()
-    sampAddChatMessage(teg ..'Быстрое меню включено.', - 1)
+    sampAddChatMessage(teg ..'Быстрое меню {00FF00}включено', - 1)
     while true do wait(0)
         local rese, ped = getCharPlayerIsTargeting(playerHandle)
         if rese then
