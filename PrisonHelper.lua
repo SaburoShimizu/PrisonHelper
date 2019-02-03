@@ -647,7 +647,7 @@ end
 
 
 function updates()
-    async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelperVer', nil --[[параметры запроса]],
+    async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelper.lua', nil --[[параметры запроса]],
         function(respe) -- вызовется при успешном выполнении и получении ответа
             f = io.open(getWorkingDirectory() ..'/PrisonHelper.lua', 'wb')
             f:write(u8:decode(respe.text))
