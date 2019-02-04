@@ -10,10 +10,10 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.3.6')
+script_version('1.3.7')
 script_properties("work-in-pause")
 
-
+rep = false
 fftt = false
 prisontime = false
 URL = nil
@@ -263,7 +263,7 @@ function warnotm(id)
             wait(1000)
             sampSendChat('/do Отмычка в кармане пиджака.')
             wait(1000)
-            sampSendChat('Зключённый №' ..id ..' , Вам вынесено камерное предупреждение за попытку взлома замка.')
+            sampSendChat('Зключённый №' ..id ..', Вам вынесено камерное предупреждение за попытку взлома замка.')
             wait(2000)
             sampSendChat('При последующих попытках я буду вынужден надеть на Вас наручники.')
         end)
@@ -434,29 +434,29 @@ function kpz(id)
 end
 
 function kpzvrem(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('Заключённый №' ..id ..', Вы посажены в одиночную камеру на две минуты.')
-            wait(1000)
-            sampSendChat('Если же Вы попытаетесь взломать замок - я продлю время вашего нахождения в камере.')
-            wait(1000)
-            sampSendChat('Или же надену на Вас наручники, если и это не поможет.')
-						wait(1000)
-						sampSendChat('/do Наручники на человеке.')
-            wait(1000)
-            sampSendChat('/me просунул руку через решётку')
-            wait(1000)
-            sampSendChat('/me расстегнул наручники')
-            wait(1000)
-            sampSendChat('/uncuff ' ..id)
-            wait(1000)
-            sampSendChat('/me высунул руки из решётки')
-            wait(1000)
-            sampSendChat('/me повесил наручники на пояс')
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/кпз-врем ID', 0x01A0E9)
-    end
+  if id ~= '' then
+    lua_thread.create(function()
+      sampSendChat('Заключённый №' ..id ..', Вы посажены в одиночную камеру на две минуты.')
+      wait(1000)
+      sampSendChat('Если же Вы попытаетесь взломать замок - я продлю время вашего нахождения в камере.')
+      wait(1000)
+      sampSendChat('Или же надену на Вас наручники, если и это не поможет.')
+      wait(1000)
+      sampSendChat('/do Наручники на человеке.')
+      wait(1000)
+      sampSendChat('/me просунул руку через решётку')
+      wait(1000)
+      sampSendChat('/me расстегнул наручники')
+      wait(1000)
+      sampSendChat('/uncuff ' ..id)
+      wait(1000)
+      sampSendChat('/me высунул руки из решётки')
+      wait(1000)
+      sampSendChat('/me повесил наручники на пояс')
+    end)
+  else
+    sampAddChatMessage('Введите {FF7000}/кпз-врем ID', 0x01A0E9)
+  end
 end
 
 function kpzkon(id)
@@ -636,14 +636,42 @@ function obedkon()
     sampSendChat('/s Спасибо.')
 end
 
+function SendReport(args)
+	rep = true
+	sampSendChat('/mn')
+	sampSendDialogResponse(27, 1, 5, -1)
+	sampSendDialogResponse(80, 1, -1, args)
+	wait(1200)
+	rep = false
+end
+
+function SendReportDialog(pedid, name)
+	reptext = [[	{FF7000}Введи своё сообщение для быстрого отправления в репорт
+
+	{FF0000}Внимание! Вводите только причину (с маленькой буквы). Ник и ID будет автоматически отправлен!]]
+	sampShowDialog(830, teg ..'Репорт на '..name..'['..pedid..'] ', reptext, '{FF7000}Отправить', '{FF0000}Отмена', 1)
+  while sampIsDialogActive() and sampGetCurrentDialogId() == 830 do wait(0) end
+  local resultMain, buttonMain, typ, tryyy = sampHasDialogRespond(830)
+  if resultMain then
+    if buttonMain == 1 and tryyy ~= '' and tryyy ~= ' ' then SendReport(name..'['..pedid..'] '..tryyy) elseif buttonMain == 0 then sampAddChatMessage(teg ..'Вы закрыли диалог с быстрым репортом.', -1) else sampAddChatMessage(teg ..'Вы ничего не ввели', -1) end
+  end
+end
+
 
 function SE.onShowDialog(dialogId, style, title, button1, button2, text)
-    if prisontime == true then
-        if text:find('.+Текущее время:.+%{3399FF}%d+:%d+.+') then dtime = text:match('.+Текущее время.+%{3399FF}(%d+):%d+.+') pris.hour = systime - dtime inicfg.save(default, 'PrisonHelper')
-            sampAddChatMessage('Время сохранено. Время от МСК: {FF7000}' ..pris.hour, 0x01A0E9)
-        end
+  if prisontime == true then
+    if text:find('.+Текущее время:.+%{3399FF}%d+:%d+.+') then dtime = text:match('.+Текущее время.+%{3399FF}(%d+):%d+.+') pris.hour = systime - dtime inicfg.save(default, 'PrisonHelper')
+      sampAddChatMessage('Время сохранено. Время от МСК: {FF7000}' ..pris.hour, 0x01A0E9)
     end
-	if title:find('.+Точное время') and pris.grafiktime then graf = grafiktimes() sampAddChatMessage(graf, 0x01A0E9) end
+  end
+  if title:find('.+Точное время') and pris.grafiktime then graf = grafiktimes() sampAddChatMessage(graf, 0x01A0E9) end
+  if dialogId == 80 and rep == true -- РЕПОРТ
+  then return false
+  end
+
+  if dialogId == 27 and rep == true -- РЕПОРТ
+  then return false
+  end
 end
 
 
@@ -834,7 +862,7 @@ function grafiktimes()
 end
 
 
-function checkfunctionsmenu(pedid)
+function checkfunctionsmenu(pedid, name)
     functionsmenu = {
         {
             title = string.format('%s Привет', fcolor),
@@ -890,6 +918,32 @@ function checkfunctionsmenu(pedid)
             title = string.format('%s Стол (Адвокат)', fcolor),
             onclick = function() stoladv() end
         },
+		{
+			title = string.format('{FF7000} Быстрый репорт'),
+			submenu = {
+				title = string.format('%s Быстрый репорт', fcolor),
+				{
+					title = string.format('%s ДМ КПЗ', fcolor),
+					onclick = function() SendReport(string.format('%s[%d] ДМит в КПЗ', name, pedid)) end
+				},
+				{
+					title = string.format('%s Сбивы анимации', fcolor),
+					onclick = function() SendReport(string.format('%s[%d] сбивает анимации в КПЗ', name, pedid)) end
+				},
+				{
+					title = string.format('%s Оскорбления / маты', fcolor),
+					onclick = function() SendReport(string.format('%s[%d] оск + маты', name, pedid)) end
+				},
+				{
+					title = string.format('%s Нон РП поведение', fcolor),
+					onclick = function() SendReport(string.format('%s[%d] НРП поведение в КПЗ', name, pedid)) end
+				},
+				{
+					title = string.format('{FF7000} Своя причина'),
+					onclick = function() SendReportDialog(pedid, name) end
+				},
+			},
+		},
     }
 end
 
@@ -902,7 +956,7 @@ function fastmenufunc()
             if isKeyJustPressed(VK_G) then
                 local _, pedid = sampGetPlayerIdByCharHandle(ped)
                 local name = sampGetPlayerNickname(pedid)
-                checkfunctionsmenu(pedid)
+                checkfunctionsmenu(pedid, name)
                 submenus_show(functionsmenu, string.format('%s %s[%d]', teg, name, pedid), 'Выбрать', 'Отменить', 'Назад')
             end
         end
