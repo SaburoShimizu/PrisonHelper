@@ -885,6 +885,10 @@ function checkfunctionsmenu(pedid, name)
             onclick = function() uncuff(pedid) end
         },
         {
+            title = string.format('%s /hold', fcolor),
+            onclick = function() sampProcessChatInput('/hold '..pedid) end
+        },
+        {
             title = string.format('%s Отмычка', fcolor),
             onclick = function() otm() end
         },
