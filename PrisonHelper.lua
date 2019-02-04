@@ -10,7 +10,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.3.3')
+script_version('1.3.4')
 script_properties("work-in-pause")
 
 
@@ -23,6 +23,7 @@ teg = '{FF7000}[PrisonHelper] {01A0E9}'
 fcolor = '{01A0E9}'
 kpzblyat = lua_thread.create_suspended(function() submenus_show(spisoc_lec, teg..'Лекции', 'Ok', 'Ne ok!', 'Nozad') end)
 fastmenuthread = lua_thread.create_suspended(function() fastmenufunc() end)
+paydayinformer = lua_thread.create_suspended(function() pdinf() end)
 
 
 default = {
@@ -32,6 +33,7 @@ default = {
         aupd = true,
         adownload = false,
         fastmenu = false,
+        paydayhelp = false,
         grafiktime = false
     }
 }
@@ -216,6 +218,7 @@ function main()
     if pris.fasttime == true then lua_thread.create(napominalka) sampAddChatMessage(teg ..'Уведомления графика тюрьмы {00FF00}включены', - 1) end
     if pris.grafiktime == true then sampAddChatMessage(teg ..'Уведомления графика тюрьмы в /c 60 {00FF00}включены', - 1) end
     if fastmenu == true and fastmenuthread:status() == 'suspended' or fastmenuthread:status() == 'dead' then fastmenuthread:run() end
+    if pris.paydayhelp == true and paydayinformer:status() == 'suspended' or paydayinformer:status() == 'dead' then paydayinformer:run() end
 
     while true do
         wait(0)
@@ -697,6 +700,10 @@ function checkmenu()
             onclick = function() pris.grafiktime = not pris.grafiktime grafiktime = pris.grafiktime inicfg.save(default, 'PrisonHelper') end
         },
         {
+            title = string.format('%s Напоминание о PayDay: %s', fcolor, pris.paydayhelp and '{00FF00}Вкл' or '{FF0000}Выкл'),
+            onclick = function() pris.paydayhelp = not pris.paydayhelp inicfg.save(default, 'PrisonHelper') end
+        },
+        {
             title = string.format('%s Быстрое меню: %s', fcolor, fastmenu and '{00FF00}Вкл' or '{FF0000}Выкл'),
             submenu = {
                 title = string.format('%s Быстрое меню: %s', teg, fastmenu and '{00FF00}Вкл' or '{FF0000}Выкл'),
@@ -710,6 +717,9 @@ function checkmenu()
                 },
             },
         },
+				{
+					title = ' ',
+				},
         {
             title = string.format('%s Информация о скрипте', fcolor),
             onclick = prisonhelp
@@ -780,6 +790,15 @@ function napominalka()
       if dt.hour == 18 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
       if dt.hour == 19 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка всей тюрьмы', 0x01A0E9) wait(1000) end
     end
+  end
+end
+
+function pdinf()
+	sampAddChatMessage(teg..'Напоминание о PayDay: {00FF00}включено', -1)
+  while true do wait(0)
+    dt = os.date('*t'); dt.min = dt.min; dt.sec = dt.sec
+    if data == true and dt.min == 55 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталось 5 минут. Не выходите в АФК', 0x01A0E9) wait(1000) end
+    if data == true and dt.min == 59 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталась 1 минута. Не выходите в АФК', 0x01A0E9) wait(1000) end
   end
 end
 
