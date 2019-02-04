@@ -10,7 +10,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.3.7')
+script_version('1.3.8')
 script_properties("work-in-pause")
 
 rep = false
@@ -933,6 +933,14 @@ function checkfunctionsmenu(pedid, name)
 				{
 					title = string.format('%s Оскорбления / маты', fcolor),
 					onclick = function() SendReport(string.format('%s[%d] оск + маты', name, pedid)) end
+				},
+				{
+					title = string.format('%s Флуд', fcolor),
+					onclick = function() SendReport(string.format('%s[%d] flood в кпз', name, pedid)) end
+				},
+				{
+					title = string.format('%s Нон РП анимации', fcolor),
+					onclick = function() SendReport(string.format('%s[%d] НРП анимации в КПЗ', name, pedid)) end
 				},
 				{
 					title = string.format('%s Нон РП поведение', fcolor),
