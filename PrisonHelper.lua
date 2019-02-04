@@ -10,7 +10,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.3.5')
+script_version('1.3.6')
 script_properties("work-in-pause")
 
 
@@ -746,7 +746,7 @@ function checkmenu()
                 },
                 {
                     title = string.format('%s Принудительное обновление', fcolor),
-                    onclick = function() aupd = true if URL ~= '' or URL ~= nil then updates() else sampAddChatMessage(teg ..'Сначало нужно проверить версию скрипта (/prisonver)', - 1) end aupd = pris.aupd end
+                    onclick = function() updates() end
                 }
             },
         }
