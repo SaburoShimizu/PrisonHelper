@@ -939,6 +939,10 @@ function checkfunctionsmenu(pedid, name)
 					onclick = function() SendReport(string.format('%s[%d] flood в кпз', name, pedid)) end
 				},
 				{
+					title = string.format('%s НРП /me', fcolor),
+					onclick = function() SendReport(string.format('%s[%d] НРП /me', name, pedid)) end
+				},
+				{
 					title = string.format('%s Нон РП анимации', fcolor),
 					onclick = function() SendReport(string.format('%s[%d] НРП анимации в КПЗ', name, pedid)) end
 				},
