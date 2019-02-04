@@ -931,6 +931,10 @@ function checkfunctionsmenu(pedid, name)
 					onclick = function() SendReport(string.format('%s[%d] сбивает анимации в КПЗ', name, pedid)) end
 				},
 				{
+					title = string.format('%s AFK от /hold', fcolor),
+					onclick = function() SendReport(string.format('%s[%d] AFK от /hold', name, pedid)) end
+				},
+				{
 					title = string.format('%s Оскорбления / маты', fcolor),
 					onclick = function() SendReport(string.format('%s[%d] оск + маты', name, pedid)) end
 				},
