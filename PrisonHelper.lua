@@ -825,8 +825,8 @@ function pdinf()
 	sampAddChatMessage(teg..'Напоминание о PayDay: {00FF00}включено', -1)
   while true do wait(0)
     dt = os.date('*t'); dt.min = dt.min; dt.sec = dt.sec
-    if data == true and dt.min == 55 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталось 5 минут. Не выходите в АФК', 0x01A0E9) wait(1000) end
-    if data == true and dt.min == 59 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталась 1 минута. Не выходите в АФК', 0x01A0E9) wait(1000) end
+    if dt.min == 55 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталось 5 минут. Не выходите в АФК', 0x01A0E9) wait(1000) end
+    if dt.min == 59 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталась 1 минута. Не выходите в АФК', 0x01A0E9) wait(1000) end
   end
 end
 
