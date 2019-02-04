@@ -10,7 +10,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.3.4')
+script_version('1.3.5')
 script_properties("work-in-pause")
 
 
@@ -543,7 +543,7 @@ end
 function ubornach(vib)
     if vib == 0 then sampSendChat('/s Внимание, заключённые. Объявлено время уборки двора и готовки еды.') elseif vib == 1 then sampSendChat('/s Внимание, заключённые. Объявлено время уборки двора.') end
     wait(6000)
-    sampSendChat('/s Прошу всех заключённых пройти либо на кухню, либо во внутренний двор.')
+		if vib == 0 then sampSendChat('/s Прошу всех заключённых пройти либо на кухню, либо во внутренний двор.') elseif vib == 1 then sampSendChat('/s Прошу всех заключённых пройти во внутренний двор.') end
     wait(6000)
     sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
     wait(6000)
