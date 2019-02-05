@@ -714,7 +714,7 @@ end
 
 function vers(verses)
 	if #verses >0 then
-		ver = resp.text:match('Version = (.+), URL.+')
+		ver = verses:match('Version = (.+), URL.+')
 		if ver ~= nil then obrupd(ver) end
 	else
 		sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже', -3)
@@ -724,7 +724,7 @@ end
 function obn(obnovka)
     if #obnovka > 0 then
         f = io.open(getWorkingDirectory() ..'/PrisonHelper.lua', 'wb')
-        f:write(u8:decode(respe.text))
+        f:write(u8:decode(obnovka))
         f:close()
         sampAddChatMessage(teg ..'Обновление успешно скачалось. Скрипт перезапуститься автоматически', - 1)
         thisScript():reload()
