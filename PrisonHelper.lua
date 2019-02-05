@@ -683,8 +683,7 @@ end
 function apdeit()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelperVer', nil --[[параметры запроса]],
         function(resp) -- вызовется при успешном выполнении и получении ответа
-            ver = resp.text:match('Version = (.+), URL.+')
-            if ver ~= nil then obrupd(ver) end
+			vers(resp.text)
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
@@ -703,11 +702,7 @@ end
 function updates()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelper.lua', nil --[[параметры запроса]],
         function(respe) -- вызовется при успешном выполнении и получении ответа
-            f = io.open(getWorkingDirectory() ..'/PrisonHelper.lua', 'wb')
-            f:write(u8:decode(respe.text))
-            f:close()
-			sampAddChatMessage(teg ..'Обновление успешно скачалось. Скрипт перезапуститься автоматически', -1)
-			thisScript():reload()
+            obn(respe.text)
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
@@ -715,6 +710,26 @@ function updates()
     end)
 end
 
+function vers(verses)
+	if #verses >0 then
+		ver = resp.text:match('Version = (.+), URL.+')
+		if ver ~= nil then obrupd(ver) end
+	else
+		sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже', -3)
+	end
+end
+
+function obn(obnovka)
+    if #obnovka > 0 then
+        f = io.open(getWorkingDirectory() ..'/PrisonHelper.lua', 'wb')
+        f:write(u8:decode(respe.text))
+        f:close()
+        sampAddChatMessage(teg ..'Обновление успешно скачалось. Скрипт перезапуститься автоматически', - 1)
+        thisScript():reload()
+	else
+		sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже', -3)
+    end
+end
 
 function checkmenu()
     my_dialog = {
