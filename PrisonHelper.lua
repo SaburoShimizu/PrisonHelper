@@ -684,6 +684,7 @@ function apdeit()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelperVer', nil --[[параметры запроса]],
         function(resp) -- вызовется при успешном выполнении и получении ответа
 			vers(resp.text)
+			print('Проверка обновления')
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
@@ -703,6 +704,7 @@ function updates()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelper.lua', nil --[[параметры запроса]],
         function(respe) -- вызовется при успешном выполнении и получении ответа
             obn(respe.text)
+			print('Обновление скрипта')
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
