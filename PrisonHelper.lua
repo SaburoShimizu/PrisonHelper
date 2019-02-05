@@ -10,7 +10,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.3.8')
+script_version('1.4')
 script_properties("work-in-pause")
 
 rep = false
@@ -205,7 +205,6 @@ function main()
     sampRegisterChatCommand("кпз-кон", kpzkon)
     sampRegisterChatCommand("стол", stol)
     sampRegisterChatCommand("отмычка", otm)
-    sampRegisterChatCommand("отмычка-варн", warnotm)
     sampRegisterChatCommand('prisonmenu', function() lua_thread.create(menu) end)
     sampRegisterChatCommand('fastmenu', function() if fastmenuthread:status() == 'suspended' or fastmenuthread:status() == 'dead' then fastmenuthread:run() else sampAddChatMessage(teg..'Данная функция уже работает. Если произошла ошибка перезапустите скрипт', - 1) end end)
     sampRegisterChatCommand("график", raspisanie)
@@ -266,6 +265,7 @@ function warnotm(id)
             sampSendChat('Зключённый №' ..id ..', Вам вынесено камерное предупреждение за попытку взлома замка.')
             wait(2000)
             sampSendChat('При последующих попытках я буду вынужден надеть на Вас наручники.')
+			pluswarn(id)
         end)
     else
         sampAddChatMessage('Введите {FF7000}/отмычка-варн ID', 0x01A0E9)
@@ -331,6 +331,7 @@ function reshotka(id)
             sampSendChat('При последующем выносе предупреждения я буду вынужден надеть на Вас наручники.')
             wait(1000)
             sampSendChat('/n По РП с наручниками за спиной ты не можешь бить по решётке. Если замечу - залью ЖБ за NonRP.')
+			pluswarn(id)
         end)
     else
         sampAddChatMessage('Введите {FF7000}/решётка ID', 0x01A0E9)
@@ -385,6 +386,7 @@ function warn(id)
             sampSendChat('Вам вынесено предупреждение за нарушение внутреннего порядка.')
             wait(1000)
             sampSendChat('При повтороном нарушении я буду вынужден посадить Вас в одиночную камеру.')
+			pluswarn(id)
         end)
     else
         sampAddChatMessage('Введите {FF7000}/варн ID', 0x01A0E9)
@@ -470,6 +472,7 @@ function kpzkon(id)
             sampSendChat('/jaildoor')
             wait(1000)
             sampSendChat('Можете выходить из камеры, но больше не нарушайте.')
+			minuswarn(id)
         end)
     else
         sampAddChatMessage('Введите {FF7000}/кпз-кон ID', 0x01A0E9)
@@ -976,6 +979,8 @@ function fastmenufunc()
             if isKeyJustPressed(VK_G) then
                 local _, pedid = sampGetPlayerIdByCharHandle(ped)
                 local name = sampGetPlayerNickname(pedid)
+				wk = checkwarn(name)
+				sampAddChatMessage(teg..'Предупреждения игрока '..name..': {FF7000}'..wk, -1)
                 checkfunctionsmenu(pedid, name)
                 submenus_show(functionsmenu, string.format('%s %s[%d]', teg, name, pedid), 'Выбрать', 'Отменить', 'Назад')
             end
@@ -1056,3 +1061,19 @@ function async_http_request(method, url, args, resolve, reject)
         end
     end)
 end
+
+function checkwarn(name)
+	if varns[name] ~= nil then return varns[name] else return 0 end
+end
+
+function pluswarn(id)
+	local name = sampGetPlayerNickname(id)
+	if varns[name] ~= nil then varns[name] = varns[name] + 1 else varns[name] = 1 end
+	checkwarn(name)
+end
+
+function minuswarn(name)
+	if varns[name] ~= nil and varns[name] > 0 then varns[name] = varns[name] - 1 else varns[name] = nil end
+end
+
+varns = {}
