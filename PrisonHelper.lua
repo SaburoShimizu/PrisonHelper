@@ -10,7 +10,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4')
+script_version('1.4.1')
 script_properties("work-in-pause")
 
 rep = false
@@ -212,7 +212,7 @@ function main()
     sampRegisterChatCommand("уведомления", function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end)
     sampRegisterChatCommand("prisonsetime", function() prisontime = true sampSendChat('/c 60') end)
 
-    sampAddChatMessage(teg..'Успешно загружен. Версия: {ff7000}' ..thisScript().version, -1)
+    sampAddChatMessage(teg..'Успешно загружен. Версия: {ff7000}' ..thisScript().version, - 1)
 
     if pris.fasttime == true then lua_thread.create(napominalka) sampAddChatMessage(teg ..'Уведомления графика тюрьмы {00FF00}включены', - 1) end
     if pris.grafiktime == true then sampAddChatMessage(teg ..'Уведомления графика тюрьмы в /c 60 {00FF00}включены', - 1) end
@@ -1084,9 +1084,11 @@ function checkwarn(name)
 end
 
 function pluswarn(id)
+	id = tonumber(id)
 	local name = sampGetPlayerNickname(id)
 	if varns[name] ~= nil then varns[name] = varns[name] + 1 else varns[name] = 1 end
 	checkwarn(name)
+	sampAddChatMessage(name..varns[name], -1)
 end
 
 function minuswarn(name)
