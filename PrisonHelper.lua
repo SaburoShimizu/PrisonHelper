@@ -10,7 +10,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4.1')
+script_version('1.4.0')
 script_properties("work-in-pause")
 
 rep = false
@@ -21,6 +21,7 @@ systime = 0
 aupd = nil
 teg = '{FF7000}[PrisonHelper] {01A0E9}'
 fcolor = '{01A0E9}'
+stupd = false
 kpzblyat = lua_thread.create_suspended(function() submenus_show(spisoc_lec, teg..'Лекции', 'Ok', 'Ne ok!', 'Nozad') end)
 fastmenuthread = lua_thread.create_suspended(function() fastmenufunc() end)
 paydayinformer = lua_thread.create_suspended(function() pdinf() end)
@@ -683,8 +684,10 @@ end
 function apdeit()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelperVer', nil --[[параметры запроса]],
         function(resp) -- вызовется при успешном выполнении и получении ответа
-			vers(resp.text)
+			stupd = false
+	 		lua_thread.create(function() vers(resp.text) end)
 			print('Проверка обновления')
+			stupd = true
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
@@ -703,7 +706,7 @@ end
 function updates()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelper.lua', nil --[[параметры запроса]],
         function(respe) -- вызовется при успешном выполнении и получении ответа
-            obn(respe.text)
+            lua_thread.create(function() obn(respe.text) end)
 			print('Обновление скрипта')
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
@@ -713,6 +716,7 @@ function updates()
 end
 
 function vers(verses)
+	while stupd == false do wait(0) end
 	if #verses >0 then
 		ver = verses:match('Version = (.+), URL.+')
 		if ver ~= nil then obrupd(ver) end
@@ -790,7 +794,7 @@ function checkmenu()
                 },
                 {
                     title = string.format('%s Проверить наличие обновления', fcolor),
-                    onclick = function() aupd = true apdeit() aupd = pris.aupd end
+                    onclick = function() lua_thread.create(function() apdeit() end) end
                 },
                 {
                     title = string.format('%s Принудительное обновление', fcolor),
