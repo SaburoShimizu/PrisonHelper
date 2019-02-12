@@ -719,7 +719,7 @@ function vers(verses)
 	while stupd == false do wait(0) end
 	if #verses >0 then
 		ver = verses:match('Version = (.+), URL.+')
-		if ver ~= nil then obrupd(ver) end
+		if ver ~= nil then lua_thread.create(function() obrupd(ver) end) end
 	else
 		sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже', -3)
 	end
@@ -794,7 +794,7 @@ function checkmenu()
                 },
                 {
                     title = string.format('%s Проверить наличие обновления', fcolor),
-                    onclick = function() lua_thread.create(function() apdeit() end) end
+                    onclick = function() apdeit() end
                 },
                 {
                     title = string.format('%s Принудительное обновление', fcolor),
