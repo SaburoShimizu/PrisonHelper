@@ -11,7 +11,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4.3')
+script_version('1.4.4')
 script_properties("work-in-pause")
 
 
@@ -40,7 +40,6 @@ default = {
         hour = 0,
         fasttime = true,
         aupd = true,
-        adownload = false,
         fastmenu = false,
         paydayhelp = false,
         grafiktime = false,
@@ -56,7 +55,6 @@ pris = ini.prison
 fasttime = pris.fasttime
 hour = pris.hour
 aupd = pris.aupd
-adownload = pris.adownload
 fastmenu = pris.fastmenu
 grafiktime = pris.grafiktime
 
@@ -783,10 +781,6 @@ function checkmenu()
                 {
                     title = string.format('%s Автообновление скрипта: %s', fcolor, pris.aupd and '{00FF00}Вкп' or '{FF0000}Выкл'),
                     onclick = function() pris.aupd = not pris.aupd inicfg.save(default, 'PrisonHelper') sampAddChatMessage(string.format('%s Автообновление %s', teg, pris.aupd and '{00FF00}включено' or '{FF0000}выключено'), - 1) end
-                },
-                {
-                    title = string.format('%s Автоустановка обновления скрипта: %s', fcolor, pris.adownload and '{00FF00}Вкп' or '{FF0000}Выкл'),
-                    onclick = function() pris.adownload = not pris.adownload adownload = pris.adownload inicfg.save(default, 'PrisonHelper') sampAddChatMessage(string.format('%s Автоустановка %s', teg, pris.adownload and '{00FF00}включена' or '{FF0000}выключена'), - 1) end
                 },
                 {
                     title = string.format('%s Проверить наличие обновления', fcolor),
