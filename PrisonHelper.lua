@@ -11,10 +11,9 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4.1')
+script_version('1.4.2')
 script_properties("work-in-pause")
 
-versc = '1.4.2';
 
 imgui.Process = true
 overlaystat = imgui.ImBool(false)
@@ -715,19 +714,13 @@ function apdeit()
     end)
 end
 
-function obrupd(ver)
-    if thisScript().version < ver then if adownload then sampAddChatMessage(teg ..'Доступно новое обновление. {FF7000}Началась автоустановка', -1) updates() else sampAddChatMessage(teg..'Доступно новое обновление до версии {FF7000}' ..ver ..'{01A0E9}. Используйте {FF7000}/prisonupdate', - 1) end
-    elseif thisScript().version == ver then sampAddChatMessage(teg..'У вас актуальная версия скрипта', - 1)
-    elseif thisScript().version > ver then sampAddChatMessage(teg ..'У вас тестовая версия скрипта', - 1)
-    end
-end
 
 
 function updates()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelper.lua', nil --[[параметры запроса]],
         function(respe) -- вызовется при успешном выполнении и получении ответа
             lua_thread.create(function() obn(respe.text) end)
-			print('Обновление скрипта')
+			print('Установка обновления скрипта')
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
@@ -735,27 +728,6 @@ function updates()
     end)
 end
 
-function vers(verses)
-	while stupd == false do wait(0) end
-	if #verses >0 then
-		ver = verses:match('Version = (.+), URL.+')
-		if ver ~= nil then lua_thread.create(function() obrupd(ver) end) end
-	else
-		sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже', -3)
-	end
-end
-
-function obn(obnovka)
-    if #obnovka > 0 then
-        f = io.open(getWorkingDirectory() ..'/PrisonHelper.lua', 'wb')
-        f:write(u8:decode(obnovka))
-        f:close()
-        sampAddChatMessage(teg ..'Обновление успешно скачалось. Скрипт перезапуститься автоматически', - 1)
-        thisScript():reload()
-	else
-		sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже', -3)
-    end
-end
 
 function checkmenu()
     my_dialog = {
