@@ -5,6 +5,7 @@ require('lib.moonloader')
 local sf = require 'sampfuncs'
 local lanes = require('lanes').configure()
 local encoding = require 'encoding'
+local imgui = require 'imgui'
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
@@ -13,18 +14,24 @@ script_author('Saburo Shimizu')
 script_version('1.4.1')
 script_properties("work-in-pause")
 
-rep = false
-fftt = false
-prisontime = false
-URL = nil
-systime = 0
-aupd = nil
-teg = '{FF7000}[PrisonHelper] {01A0E9}'
-fcolor = '{01A0E9}'
-stupd = false
-kpzblyat = lua_thread.create_suspended(function() submenus_show(spisoc_lec, teg..'Лекции', 'Ok', 'Ne ok!', 'Nozad') end)
-fastmenuthread = lua_thread.create_suspended(function() fastmenufunc() end)
-paydayinformer = lua_thread.create_suspended(function() pdinf() end)
+imgui.Process = true
+overlaystat = imgui.ImBool(false)
+
+main_window_state = imgui.ImBool(false)
+text_buffer = imgui.ImBuffer(256)
+
+local rep = false
+local fftt = false
+local prisontime = false
+local URL = nil
+local systime = 0
+local aupd = nil
+local teg = '{FF7000}[PrisonHelper] {01A0E9}'
+local fcolor = '{01A0E9}'
+local stupd = false
+local kpzblyat = lua_thread.create_suspended(function() submenus_show(spisoc_lec, teg..'Лекции', 'Ok', 'Ne ok!', 'Nozad') end)
+local fastmenuthread = lua_thread.create_suspended(function() fastmenufunc() end)
+local paydayinformer = lua_thread.create_suspended(function() pdinf() end)
 
 
 default = {
@@ -35,7 +42,10 @@ default = {
         adownload = false,
         fastmenu = false,
         paydayhelp = false,
-        grafiktime = false
+        grafiktime = false,
+        astoverlay = false,
+		Xovers = 500,
+		Yovers = 500
     }
 }
 
@@ -77,7 +87,6 @@ rasp = [[		{FF0000}Понедельник - Пятница
 {FF7000}21:00 - 22:00 {d5dedd}- Уборка всей тюрьмы
 {FF7000}22:00 - 07:00 {d5dedd}- Отбой]]
 
-
 ph = [[{FF7000}/jd{d5dedd} - открыть/закрыть камеру (jaildoor)
 {FF7000}/panel{d5dedd} - РП открыть панель управления камерамаи/двором
 {FF7000}/prisonreload{d5dedd} - Перезагружает скрипт
@@ -97,6 +106,8 @@ ph = [[{FF7000}/jd{d5dedd} - открыть/закрыть камеру (jaildoo
 {FF7000}/отмычка-варн{d5dedd} - РП сбой взлома камер и предупреждение о наручниках
 {FF7000}/стол{d5dedd} - Приказ заключённому слезть со стола
 {FF7000}/режим{d5dedd} - Лекции для заключённых
+{FF7000}/prisonoverlay{d5dedd} - Включить/выключить оверлей (без сохранения в INI)
+{FF7000}/prisonoverlaypos{d5dedd} - Настройка позиции оверлея (Требуется перезапуск после ввода)
 {FF7000}/prisonmenu{d5dedd} - Настройки скрипта]]
 
 
@@ -190,6 +201,8 @@ function main()
     if aupd == true then apdeit() end
     -- register commands
     sampRegisterChatCommand("jd", jd)
+	sampRegisterChatCommand("prisonoverlay", overlaysuka)
+	sampRegisterChatCommand("prisonoverlaypos", overlaypos)
     sampRegisterChatCommand("prisonreload", reloader)
     sampRegisterChatCommand("prisonupdate", updates)
     sampRegisterChatCommand("prisonver", apdeit)
@@ -213,6 +226,8 @@ function main()
     sampRegisterChatCommand("уведомления", function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end)
     sampRegisterChatCommand("prisonsetime", function() prisontime = true sampSendChat('/c 60') end)
 
+	overlaystat.v = pris.astoverlay
+
     sampAddChatMessage(teg..'Успешно загружен. Версия: {ff7000}' ..thisScript().version, - 1)
 
     if pris.fasttime == true then lua_thread.create(napominalka) sampAddChatMessage(teg ..'Уведомления графика тюрьмы {00FF00}включены', - 1) end
@@ -222,9 +237,12 @@ function main()
 
     while true do
         wait(0)
+
+
         local ini = inicfg.load(default, 'PrisonHelper.ini')
         pris = ini.prison
         fasttime = pris.fasttime
+
 
         if kpzblyat:status() == 'running' or kpzblyat:status() == nil then if isKeyDown(VK_MENU) and isKeyJustPressed(VK_OEM_5) then kpzblyat:terminate() sampAddChatMessage(teg ..'Зачитывание лекции остановлено', - 1) end end
         if fastmenuthread:status() == 'running' or fastmenuthread:status() == nil then if isKeyDown(VK_MENU) and isKeyJustPressed(VK_OEM_5) then fastmenuthread:terminate() sampAddChatMessage(teg ..'Быстрое меню выключено/перезагружено.', - 1) if fastmenu == true then fastmenuthread:run() end end end
@@ -744,6 +762,10 @@ function checkmenu()
             onclick = function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end
         },
         {
+            title = string.format('%s Оверлей: %s', fcolor, pris.astoverlay and '{00FF00}Вкл' or '{FF0000}Выкл'),
+            onclick = function() pris.astoverlay = not pris.astoverlay overlaystat.v = pris.astoverlay inicfg.save(default, 'PrisonHelper') end
+        },
+        {
             title = string.format('%s Автонастройка времени. Время от МСК: {FF7000}%s', fcolor, pris.hour),
             onclick = function() prisontime = true sampSendChat('/c 60') end
         },
@@ -882,6 +904,37 @@ function grafiktimes()
         if dt.hour == 17 then graf = '[Расписание] {d5dedd}Ужин' return graf end
         if dt.hour == 18 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
         if dt.hour >= 19 and dt.hour < 22 then graf = '[Расписание] {d5dedd}Уборка всей тюрьмы' return graf end
+    end
+end
+
+function grafiktimesoverlay()
+    local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
+    local dt = os.date("*t", os.time(dt))
+    -- Напоминание о расписании КПЗ
+    if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
+        if dt.hour >= 22 and dt.hour <= 6 then graf = 'Отбой' return graf end
+        if dt.hour >= 7 and dt.hour <= 8 then graf = 'Подъем, завтрак и уборка камер' return graf end
+        if dt.hour == 9 then graf = 'Свободное время' return graf end
+        if dt.hour >= 10 and dt.hour <= 12 then graf = 'Готовка еды и уборка двора' return graf end
+        if dt.hour == 13 then graf = 'Обед' return graf end
+        if dt.hour == 14 then graf = 'Свободное время' return graf end
+        if dt.hour >= 15 and dt.hour <= 16 then  graf = 'Уборка двора и готовка еды' return graf end
+        if dt.hour >= 17 and dt.hour <= 18 then graf = 'Тренировка в зале' return graf end
+        if dt.hour == 19 then graf = 'Ужин' return graf end
+        if dt.hour == 20 then graf = 'Свободное время' return graf end
+        if dt.hour == 21 then graf = 'Уборка всей тюрьмы' return graf end
+    elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
+        if dt.hour >= 20 and dt.hour <= 6 then graf = 'Отбой. Разогнать по камерам' return graf end
+        if dt.hour >= 7 and dt.hour <= 8 then graf = 'Подъем, завтрак и уборка камер' return graf end
+        if dt.hour == 9 then graf = 'Свободное время' return graf end
+        if dt.hour >= 10 and dt.hour <= 11 then graf = 'Готовка еды и уборка двора' return graf end
+        if dt.hour == 12 then graf = 'Обед' return graf end
+        if dt.hour == 13 then graf = 'Свободное время' return graf end
+        if dt.hour >= 14 and dt.hour <= 15 then graf = 'Уборка двора и готовка еды' return graf end
+        if dt.hour == 16 then graf = 'Тренировка в зале' return graf end
+        if dt.hour == 17 then graf = 'Ужин' return graf end
+        if dt.hour == 18 then graf = 'Свободное время' return graf end
+        if dt.hour >= 19 and dt.hour < 22 then graf = 'Уборка всей тюрьмы' return graf end
     end
 end
 
@@ -1100,3 +1153,46 @@ function minuswarn(name)
 end
 
 varns = {}
+
+function overlaysuka()
+	overlaystat.v = not overlaystat.v
+	sampAddChatMessage(string.format('%s %s',teg, overlaystat.v and 'Оверлей включён' or 'Оверлей выключен'), -1)
+end
+
+
+function overlaypos()
+    lua_thread.create(function()
+        sampAddChatMessage(teg ..'Для применения нажмите {FF7000}ЛКМ', - 1)
+        robotet = true
+		showCursor(true, true)
+		while robotet == true do
+            wait(0)
+            local Xover, Yover = getCursorPos()
+			Xovers = Xover
+			Yovers = Yover
+            if isKeyDown(VK_LBUTTON) then robotet = false end
+        end
+		wait(500)
+		pris.Xovers = Xovers
+		pris.Yovers = Yovers
+		inicfg.save(default, 'PrisonHelper')
+		showCursor(false, false)
+        sampAddChatMessage(teg..pris.Xovers, - 1)
+		imgui.Process = false
+		imgui.Process = true
+    end)
+end
+
+function imgui.OnDrawFrame()
+	imgui.ShowCursor = false
+    if overlaystat.v then
+		imgui.SetNextWindowPos(imgui.ImVec2(pris.Xovers, pris.Yovers), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(180, 75), imgui.Cond.FirstUseEver)
+        imgui.Begin('Overlay',_,imgui.WindowFlags.NoTitleBar)
+		imgui.ShowCursor = false
+		grafek = grafiktimesoverlay()
+        imgui.Text(u8(grafek)) -- простой текст внутри этого окна
+        imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
+        imgui.End() -- конец окна
+    end
+end
