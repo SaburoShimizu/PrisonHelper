@@ -14,6 +14,8 @@ script_author('Saburo Shimizu')
 script_version('1.4.1')
 script_properties("work-in-pause")
 
+versc = '1.4.2'
+
 imgui.Process = true
 overlaystat = imgui.ImBool(false)
 
