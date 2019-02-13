@@ -1155,7 +1155,7 @@ function imgui.OnDrawFrame()
 	imgui.ShowCursor = false
     if overlaystat.v then
 		imgui.SetNextWindowPos(imgui.ImVec2(pris.Xovers, pris.Yovers), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(180, 52), imgui.Cond.FirstUseEver)
+        imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
         imgui.Begin('Overlay',_,imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize)
 		imgui.ShowCursor = false
 		grafek = grafiktimesoverlay()
