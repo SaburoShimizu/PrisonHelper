@@ -1,6 +1,6 @@
 local SE = require 'lib.samp.events'
 local inicfg = require 'inicfg'
-dlstatus = require('moonloader').download_status
+local dlstatus = require('moonloader').download_status
 require('lib.moonloader')
 local sf = require 'sampfuncs'
 local lanes = require('lanes').configure()
@@ -11,16 +11,19 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4.4')
+script_version('1.4.5')
 script_properties("work-in-pause")
 
 
 imgui.Process = true
 overlaystat = imgui.ImBool(false)
+grafeks = imgui.ImBool(false)
 
 main_window_state = imgui.ImBool(false)
 text_buffer = imgui.ImBuffer(256)
 
+
+local sw, sh = getScreenResolution()
 local rep = false
 local fftt = false
 local prisontime = false
@@ -45,7 +48,8 @@ default = {
         grafiktime = false,
         astoverlay = false,
 		Xovers = 500,
-		Yovers = 500
+		Yovers = 500,
+		mouse = true
     }
 }
 
@@ -84,7 +88,9 @@ rasp = [[		{FF0000}Понедельник - Пятница
 {FF7000}19:00 - 20:00 {d5dedd}- Ужин
 {FF7000}20:00 - 21:00 {d5dedd}- Свободное время
 {FF7000}21:00 - 22:00 {d5dedd}- Уборка всей тюрьмы
-{FF7000}22:00 - 07:00 {d5dedd}- Отбой]]
+{FF7000}22:00 - 07:00 {d5dedd}- Отбой
+
+{FF0000}Закрыть окно: Backspace, Enter, ESC]]
 
 ph = [[{FF7000}/jd{d5dedd} - открыть/закрыть камеру (jaildoor)
 {FF7000}/panel{d5dedd} - РП открыть панель управления камерамаи/двором
@@ -200,6 +206,7 @@ function main()
     if aupd == true then apdeit() end
     -- register commands
     sampRegisterChatCommand("jd", jd)
+	sampRegisterChatCommand("график", function() grafeks.v = not grafeks.v end)
 	sampRegisterChatCommand("prisonoverlay", overlaysuka)
 	sampRegisterChatCommand("prisonoverlaypos", overlaypos)
     sampRegisterChatCommand("prisonreload", reloader)
@@ -220,12 +227,11 @@ function main()
     sampRegisterChatCommand("отмычка", otm)
     sampRegisterChatCommand('prisonmenu', function() lua_thread.create(menu) end)
     sampRegisterChatCommand('fastmenu', function() if fastmenuthread:status() == 'suspended' or fastmenuthread:status() == 'dead' then fastmenuthread:run() else sampAddChatMessage(teg..'Данная функция уже работает. Если произошла ошибка перезапустите скрипт', - 1) end end)
-    sampRegisterChatCommand("график", raspisanie)
+    --sampRegisterChatCommand("график", raspisanie)
     sampRegisterChatCommand("prisonhelp", prisonhelp)
     sampRegisterChatCommand("уведомления", function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end)
     sampRegisterChatCommand("prisonsetime", function() prisontime = true sampSendChat('/c 60') end)
 
-	overlaystat.v = pris.astoverlay
 
     sampAddChatMessage(teg..'Успешно загружен. Версия: {ff7000}' ..thisScript().version, - 1)
 
@@ -738,6 +744,10 @@ function checkmenu()
             onclick = function() pris.astoverlay = not pris.astoverlay overlaystat.v = pris.astoverlay inicfg.save(default, 'PrisonHelper') end
         },
         {
+            title = string.format('%s Мышка в /график: %s', fcolor, pris.mouse and '{00FF00}Вкл' or '{FF0000}Выкл'),
+            onclick = function() pris.mouse = not pris.mouse inicfg.save(default, 'PrisonHelper') end
+        },
+        {
             title = string.format('%s Автонастройка времени. Время от МСК: {FF7000}%s', fcolor, pris.hour),
             onclick = function() prisontime = true sampSendChat('/c 60') end
         },
@@ -802,109 +812,6 @@ end
 
 
 
-function napominalka()
-  while true do wait(0)
-	  local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
-      local dt = os.date("*t", os.time(dt))
-    -- Напоминание о расписании КПЗ
-    if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
-      if dt.hour == 22 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Отбой', 0x01A0E9) wait(1000) end
-      if dt.hour == 7 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Подъем, завтрак и уборка камер', 0x01A0E9) wait(1000) end
-      if dt.hour == 9 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-      if dt.hour == 10 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Готовка еды и уборка двора', 0x01A0E9) wait(1000) end
-      if dt.hour == 13 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Обед', 0x01A0E9) wait(1000) end
-      if dt.hour == 14 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-      if dt.hour == 15 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка двора и готовка еды', 0x01A0E9) wait(1000) end
-      if dt.hour == 17 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Тренировка в зале', 0x01A0E9) wait(1000) end
-      if dt.hour == 19 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Ужин', 0x01A0E9) wait(1000) end
-      if dt.hour == 20 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-      if dt.hour == 21 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка всей тюрьмы', 0x01A0E9) wait(1000) end
-    elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
-      if dt.hour == 20 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Отбой. Разогнать по камерам', 0x01A0E9) wait(1000) end
-      if dt.hour == 7 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Подъем, завтрак и уборка камер', 0x01A0E9) wait(1000) end
-      if dt.hour == 9 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-      if dt.hour == 10 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Готовка еды и уборка двора', 0x01A0E9) wait(1000) end
-      if dt.hour == 12 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Обед', 0x01A0E9) wait(1000) end
-      if dt.hour == 13 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-      if dt.hour == 14 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка двора и готовка еды', 0x01A0E9) wait(1000) end
-      if dt.hour == 16 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Тренировка в зале', 0x01A0E9) wait(1000) end
-      if dt.hour == 17 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Ужин', 0x01A0E9) wait(1000) end
-      if dt.hour == 18 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-      if dt.hour == 19 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка всей тюрьмы', 0x01A0E9) wait(1000) end
-    end
-  end
-end
-
-function pdinf()
-	sampAddChatMessage(teg..'Напоминание о PayDay: {00FF00}включено', -1)
-  while true do wait(0)
-    dt = os.date('*t'); dt.min = dt.min; dt.sec = dt.sec
-    if dt.min == 55 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталось 5 минут. Не выходите в АФК', 0x01A0E9) wait(1000) end
-    if dt.min == 59 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталась 1 минута. Не выходите в АФК', 0x01A0E9) wait(1000) end
-  end
-end
-
-function grafiktimes()
-    local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
-    local dt = os.date("*t", os.time(dt))
-    -- Напоминание о расписании КПЗ
-    if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
-        if dt.hour >= 22 and dt.hour <= 6 then graf = '[Расписание] {d5dedd}Отбой' return graf end
-        if dt.hour >= 7 and dt.hour <= 8 then graf = '[Расписание] {d5dedd}Подъем, завтрак и уборка камер' return graf end
-        if dt.hour == 9 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-        if dt.hour >= 10 and dt.hour <= 12 then graf = '[Расписание] {d5dedd}Готовка еды и уборка двора' return graf end
-        if dt.hour == 13 then graf = '[Расписание] {d5dedd}Обед' return graf end
-        if dt.hour == 14 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-        if dt.hour >= 15 and dt.hour <= 16 then  graf = '[Расписание] {d5dedd}Уборка двора и готовка еды' return graf end
-        if dt.hour >= 17 and dt.hour <= 18 then graf = '[Расписание] {d5dedd}Тренировка в зале' return graf end
-        if dt.hour == 19 then graf = '[Расписание] {d5dedd}Ужин' return graf end
-        if dt.hour == 20 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-        if dt.hour == 21 then graf = '[Расписание] {d5dedd}Уборка всей тюрьмы' return graf end
-    elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
-        if dt.hour >= 20 and dt.hour <= 6 then graf = '[Расписание] {d5dedd}Отбой. Разогнать по камерам' return graf end
-        if dt.hour >= 7 and dt.hour <= 8 then graf = '[Расписание] {d5dedd}Подъем, завтрак и уборка камер' return graf end
-        if dt.hour == 9 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-        if dt.hour >= 10 and dt.hour <= 11 then graf = '[Расписание] {d5dedd}Готовка еды и уборка двора' return graf end
-        if dt.hour == 12 then graf = '[Расписание] {d5dedd}Обед' return graf end
-        if dt.hour == 13 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-        if dt.hour >= 14 and dt.hour <= 15 then graf = '[Расписание] {d5dedd}Уборка двора и готовка еды' return graf end
-        if dt.hour == 16 then graf = '[Расписание] {d5dedd}Тренировка в зале' return graf end
-        if dt.hour == 17 then graf = '[Расписание] {d5dedd}Ужин' return graf end
-        if dt.hour == 18 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-        if dt.hour >= 19 and dt.hour < 22 then graf = '[Расписание] {d5dedd}Уборка всей тюрьмы' return graf end
-    end
-end
-
-function grafiktimesoverlay()
-    local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
-    local dt = os.date("*t", os.time(dt))
-    -- Напоминание о расписании КПЗ
-    if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
-        if dt.hour >= 22 and dt.hour <= 6 then graf = 'Отбой' return graf end
-        if dt.hour >= 7 and dt.hour <= 8 then graf = 'Подъем, завтрак и уборка камер' return graf end
-        if dt.hour == 9 then graf = 'Свободное время' return graf end
-        if dt.hour >= 10 and dt.hour <= 12 then graf = 'Готовка еды и уборка двора' return graf end
-        if dt.hour == 13 then graf = 'Обед' return graf end
-        if dt.hour == 14 then graf = 'Свободное время' return graf end
-        if dt.hour >= 15 and dt.hour <= 16 then  graf = 'Уборка двора и готовка еды' return graf end
-        if dt.hour >= 17 and dt.hour <= 18 then graf = 'Тренировка в зале' return graf end
-        if dt.hour == 19 then graf = 'Ужин' return graf end
-        if dt.hour == 20 then graf = 'Свободное время' return graf end
-        if dt.hour == 21 then graf = 'Уборка всей тюрьмы' return graf end
-    elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
-        if dt.hour >= 20 and dt.hour <= 6 then graf = 'Отбой. Разогнать по камерам' return graf end
-        if dt.hour >= 7 and dt.hour <= 8 then graf = 'Подъем, завтрак и уборка камер' return graf end
-        if dt.hour == 9 then graf = 'Свободное время' return graf end
-        if dt.hour >= 10 and dt.hour <= 11 then graf = 'Готовка еды и уборка двора' return graf end
-        if dt.hour == 12 then graf = 'Обед' return graf end
-        if dt.hour == 13 then graf = 'Свободное время' return graf end
-        if dt.hour >= 14 and dt.hour <= 15 then graf = 'Уборка двора и готовка еды' return graf end
-        if dt.hour == 16 then graf = 'Тренировка в зале' return graf end
-        if dt.hour == 17 then graf = 'Ужин' return graf end
-        if dt.hour == 18 then graf = 'Свободное время' return graf end
-        if dt.hour >= 19 and dt.hour < 22 then graf = 'Уборка всей тюрьмы' return graf end
-    end
-end
 
 
 function checkfunctionsmenu(pedid, name)
@@ -1032,80 +939,18 @@ end
 
 
 
-function submenus_show(menu, caption, select_button, close_button, back_button)
-    select_button, close_button, back_button = select_button or 'Select', close_button or 'Close', back_button or 'Back'
-    prev_menus = {}
-    function display(menu, id, caption)
-        local string_list = {}
-        for i, v in ipairs(menu) do
-            table.insert(string_list, type(v.submenu) == 'table' and v.title .. '  >>' or v.title)
-        end
-        sampShowDialog(id, caption, table.concat(string_list, '\n'), select_button, (#prev_menus > 0) and back_button or close_button, sf.DIALOG_STYLE_LIST)
-        repeat
-            wait(0)
-            local result, button, list = sampHasDialogRespond(id)
-            if result then
-                if button == 1 and list ~= -1 then
-                    local item = menu[list + 1]
-                    if type(item.submenu) == 'table' then -- submenu
-                        table.insert(prev_menus, {menu = menu, caption = caption})
-                        if type(item.onclick) == 'function' then
-                            item.onclick(menu, list + 1, item.submenu)
-                        end
-                        return display(item.submenu, id + 1, item.submenu.title and item.submenu.title or item.title)
-                    elseif type(item.onclick) == 'function' then
-                        local result = item.onclick(menu, list + 1)
-                        if not result then return result end
-                        return display(menu, id, caption)
-                    end
-                else -- if button == 0
-                    if #prev_menus > 0 then
-                        local prev_menu = prev_menus[#prev_menus]
-                        prev_menus[#prev_menus] = nil
-                        return display(prev_menu.menu, id - 1, prev_menu.caption)
-                    end
-                    return false
-                end
-            end
-        until result
-    end
-    return display(menu, 31337, caption or menu.title)
-end
-
-
-
-function async_http_request(method, url, args, resolve, reject)
-    local request_lane = lanes.gen('*', {package = {path = package.path, cpath = package.cpath}}, function()
-        local requests = require 'requests'
-        local ok, result = pcall(requests.request, method, url, args)
-        if ok then
-            result.json, result.xml = nil, nil -- cannot be passed through a lane
-            return true, result
-        else
-            return false, result -- return error
-        end
-    end)
-    if not reject then reject = function() end end
-    lua_thread.create(function()
-        local lh = request_lane()
-        while true do
-            local status = lh.status
-            if status == 'done' then
-                local ok, result = lh[1], lh[2]
-                if ok then resolve(result) else reject(result) end
-                return
-            elseif status == 'error' then
-                return reject(lh[1])
-            elseif status == 'killed' or status == 'cancelled' then
-                return reject(status)
-            end
-            wait(0)
-        end
-    end)
-end
 
 function checkwarn(name)
 	if varns[name] ~= nil then return varns[name] else return 0 end
+end
+
+function pdinf()
+	sampAddChatMessage(teg..'Напоминание о PayDay: {00FF00}включено', -1)
+	while true do wait(0)
+		dt = os.date('*t'); dt.min = dt.min; dt.sec = dt.sec
+		if dt.min == 55 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталось 5 минут. Не выходите в АФК', 0x01A0E9) wait(1000) end
+		if dt.min == 59 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталась 1 минута. Не выходите в АФК', 0x01A0E9) wait(1000) end
+	end
 end
 
 function pluswarn(id)
@@ -1124,6 +969,7 @@ varns = {}
 
 function overlaysuka()
 	overlaystat.v = not overlaystat.v
+	pris.astoverlay = not overlaystat.v
 	sampAddChatMessage(string.format('%s %s',teg, overlaystat.v and 'Оверлей включён' or 'Оверлей выключен'), -1)
 end
 
@@ -1151,16 +997,368 @@ function overlaypos()
     end)
 end
 
+
 function imgui.OnDrawFrame()
-	imgui.ShowCursor = false
-    if overlaystat.v then
-		imgui.SetNextWindowPos(imgui.ImVec2(pris.Xovers, pris.Yovers), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
-        imgui.Begin('Overlay',_,imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize)
+    if pris.astoverlay then
 		imgui.ShowCursor = false
-		grafek = grafiktimesoverlay()
-        imgui.Text(u8(grafek)) -- простой текст внутри этого окна
-        imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
-        imgui.End() -- конец окна
+        if overlaystat.v then
+            imgui.SetNextWindowPos(imgui.ImVec2(pris.Xovers, pris.Yovers), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+            imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
+            imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize)
+            imgui.ShowCursor = false
+            grafek = grafiktimesoverlay()
+            imgui.Text(u8(grafek)) -- простой текст внутри этого окна
+            imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
+            imgui.End() -- конец окна
+        end
     end
+	if grafeks.v then
+		if pris.mouse then imgui.ShowCursor = true end
+		if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then grafeks.v = not grafeks.v end
+		imgui.SetNextWindowPos(imgui.ImVec2(sw/2, sh/2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+		imgui.SetNextWindowSize(imgui.ImVec2(500, 500), imgui.Cond.FirstUseEver)
+		imgui.Begin(u8'График тюрьмы', grafeks)
+		imgui.CenterTextColoredRGB(rasp)
+		imgui.End()
+	end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function napominalka()
+	while true do wait(0)
+		local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
+		local dt = os.date("*t", os.time(dt))
+		-- Напоминание о расписании КПЗ
+		if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
+			if dt.hour == 22 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Отбой', 0x01A0E9) wait(1000) end
+			if dt.hour == 7 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Подъем, завтрак и уборка камер', 0x01A0E9) wait(1000) end
+			if dt.hour == 9 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
+			if dt.hour == 10 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Готовка еды и уборка двора', 0x01A0E9) wait(1000) end
+			if dt.hour == 13 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Обед', 0x01A0E9) wait(1000) end
+			if dt.hour == 14 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
+			if dt.hour == 15 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка двора и готовка еды', 0x01A0E9) wait(1000) end
+			if dt.hour == 17 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Тренировка в зале', 0x01A0E9) wait(1000) end
+			if dt.hour == 19 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Ужин', 0x01A0E9) wait(1000) end
+			if dt.hour == 20 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
+			if dt.hour == 21 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка всей тюрьмы', 0x01A0E9) wait(1000) end
+		elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
+			if dt.hour == 20 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Отбой. Разогнать по камерам', 0x01A0E9) wait(1000) end
+			if dt.hour == 7 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Подъем, завтрак и уборка камер', 0x01A0E9) wait(1000) end
+			if dt.hour == 9 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
+			if dt.hour == 10 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Готовка еды и уборка двора', 0x01A0E9) wait(1000) end
+			if dt.hour == 12 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Обед', 0x01A0E9) wait(1000) end
+			if dt.hour == 13 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
+			if dt.hour == 14 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка двора и готовка еды', 0x01A0E9) wait(1000) end
+			if dt.hour == 16 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Тренировка в зале', 0x01A0E9) wait(1000) end
+			if dt.hour == 17 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Ужин', 0x01A0E9) wait(1000) end
+			if dt.hour == 18 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
+			if dt.hour == 19 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка всей тюрьмы', 0x01A0E9) wait(1000) end
+		end
+	end
+end
+
+
+function grafiktimes()
+	local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
+	local dt = os.date("*t", os.time(dt))
+	-- Напоминание о расписании КПЗ
+	if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
+		if dt.hour >= 22 and dt.hour <= 6 then graf = '[Расписание] {d5dedd}Отбой' return graf end
+		if dt.hour >= 7 and dt.hour <= 8 then graf = '[Расписание] {d5dedd}Подъем, завтрак и уборка камер' return graf end
+		if dt.hour == 9 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
+		if dt.hour >= 10 and dt.hour <= 12 then graf = '[Расписание] {d5dedd}Готовка еды и уборка двора' return graf end
+		if dt.hour == 13 then graf = '[Расписание] {d5dedd}Обед' return graf end
+		if dt.hour == 14 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
+		if dt.hour >= 15 and dt.hour <= 16 then  graf = '[Расписание] {d5dedd}Уборка двора и готовка еды' return graf end
+		if dt.hour >= 17 and dt.hour <= 18 then graf = '[Расписание] {d5dedd}Тренировка в зале' return graf end
+		if dt.hour == 19 then graf = '[Расписание] {d5dedd}Ужин' return graf end
+		if dt.hour == 20 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
+		if dt.hour == 21 then graf = '[Расписание] {d5dedd}Уборка всей тюрьмы' return graf end
+	elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
+		if dt.hour >= 20 and dt.hour <= 6 then graf = '[Расписание] {d5dedd}Отбой. Разогнать по камерам' return graf end
+		if dt.hour >= 7 and dt.hour <= 8 then graf = '[Расписание] {d5dedd}Подъем, завтрак и уборка камер' return graf end
+		if dt.hour == 9 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
+		if dt.hour >= 10 and dt.hour <= 11 then graf = '[Расписание] {d5dedd}Готовка еды и уборка двора' return graf end
+		if dt.hour == 12 then graf = '[Расписание] {d5dedd}Обед' return graf end
+		if dt.hour == 13 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
+		if dt.hour >= 14 and dt.hour <= 15 then graf = '[Расписание] {d5dedd}Уборка двора и готовка еды' return graf end
+		if dt.hour == 16 then graf = '[Расписание] {d5dedd}Тренировка в зале' return graf end
+		if dt.hour == 17 then graf = '[Расписание] {d5dedd}Ужин' return graf end
+		if dt.hour == 18 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
+		if dt.hour >= 19 and dt.hour < 22 then graf = '[Расписание] {d5dedd}Уборка всей тюрьмы' return graf end
+	end
+end
+
+function grafiktimesoverlay()
+	local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
+	local dt = os.date("*t", os.time(dt))
+	-- Напоминание о расписании КПЗ
+	if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
+		if dt.hour >= 22 and dt.hour <= 6 then graf = 'Отбой' return graf end
+		if dt.hour >= 7 and dt.hour <= 8 then graf = 'Подъем, завтрак и уборка камер' return graf end
+		if dt.hour == 9 then graf = 'Свободное время' return graf end
+		if dt.hour >= 10 and dt.hour <= 12 then graf = 'Готовка еды и уборка двора' return graf end
+		if dt.hour == 13 then graf = 'Обед' return graf end
+		if dt.hour == 14 then graf = 'Свободное время' return graf end
+		if dt.hour >= 15 and dt.hour <= 16 then  graf = 'Уборка двора и готовка еды' return graf end
+		if dt.hour >= 17 and dt.hour <= 18 then graf = 'Тренировка в зале' return graf end
+		if dt.hour == 19 then graf = 'Ужин' return graf end
+		if dt.hour == 20 then graf = 'Свободное время' return graf end
+		if dt.hour == 21 then graf = 'Уборка всей тюрьмы' return graf end
+	elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
+		if dt.hour >= 20 and dt.hour <= 6 then graf = 'Отбой. Разогнать по камерам' return graf end
+		if dt.hour >= 7 and dt.hour <= 8 then graf = 'Подъем, завтрак и уборка камер' return graf end
+		if dt.hour == 9 then graf = 'Свободное время' return graf end
+		if dt.hour >= 10 and dt.hour <= 11 then graf = 'Готовка еды и уборка двора' return graf end
+		if dt.hour == 12 then graf = 'Обед' return graf end
+		if dt.hour == 13 then graf = 'Свободное время' return graf end
+		if dt.hour >= 14 and dt.hour <= 15 then graf = 'Уборка двора и готовка еды' return graf end
+		if dt.hour == 16 then graf = 'Тренировка в зале' return graf end
+		if dt.hour == 17 then graf = 'Ужин' return graf end
+		if dt.hour == 18 then graf = 'Свободное время' return graf end
+		if dt.hour >= 19 and dt.hour < 22 then graf = 'Уборка всей тюрьмы' return graf end
+	end
+end
+
+
+local encoding = require 'encoding'
+encoding.default = 'CP1251'
+local u8 = encoding.UTF8
+
+function imgui.CenterTextColoredRGB(text)
+    local width = imgui.GetWindowWidth()
+    local style = imgui.GetStyle()
+    local colors = style.Colors
+    local ImVec4 = imgui.ImVec4
+
+    local explode_argb = function(argb)
+        local a = bit.band(bit.rshift(argb, 24), 0xFF)
+        local r = bit.band(bit.rshift(argb, 16), 0xFF)
+        local g = bit.band(bit.rshift(argb, 8), 0xFF)
+        local b = bit.band(argb, 0xFF)
+        return a, r, g, b
+    end
+
+    local getcolor = function(color)
+        if color:sub(1, 6):upper() == 'SSSSSS' then
+            local r, g, b = colors[1].x, colors[1].y, colors[1].z
+            local a = tonumber(color:sub(7, 8), 16) or colors[1].w * 255
+            return ImVec4(r, g, b, a / 255)
+        end
+        local color = type(color) == 'string' and tonumber(color, 16) or color
+        if type(color) ~= 'number' then return end
+        local r, g, b, a = explode_argb(color)
+        return imgui.ImColor(r, g, b, a):GetVec4()
+    end
+
+    local render_text = function(text_)
+        for w in text_:gmatch('[^\r\n]+') do
+            local textsize = w:gsub('{.-}', '')
+            local text_width = imgui.CalcTextSize(u8(textsize))
+            imgui.SetCursorPosX( width / 2 - text_width .x / 2 )
+            local text, colors_, m = {}, {}, 1
+            w = w:gsub('{(......)}', '{%1FF}')
+            while w:find('{........}') do
+                local n, k = w:find('{........}')
+                local color = getcolor(w:sub(n + 1, k - 1))
+                if color then
+                    text[#text], text[#text + 1] = w:sub(m, n - 1), w:sub(k + 1, #w)
+                    colors_[#colors_ + 1] = color
+                    m = n
+                end
+                w = w:sub(1, n - 1) .. w:sub(k + 1, #w)
+            end
+            if text[0] then
+                for i = 0, #text do
+                    imgui.TextColored(colors_[i] or colors[1], u8(text[i]))
+                    imgui.SameLine(nil, 0)
+                end
+                imgui.NewLine()
+            else
+                imgui.Text(u8(w))
+            end
+        end
+    end
+    render_text(text)
+end
+
+
+function submenus_show(menu, caption, select_button, close_button, back_button)
+	select_button, close_button, back_button = select_button or 'Select', close_button or 'Close', back_button or 'Back'
+	prev_menus = {}
+	function display(menu, id, caption)
+		local string_list = {}
+		for i, v in ipairs(menu) do
+			table.insert(string_list, type(v.submenu) == 'table' and v.title .. '  >>' or v.title)
+		end
+		sampShowDialog(id, caption, table.concat(string_list, '\n'), select_button, (#prev_menus > 0) and back_button or close_button, sf.DIALOG_STYLE_LIST)
+		repeat
+			wait(0)
+			local result, button, list = sampHasDialogRespond(id)
+			if result then
+				if button == 1 and list ~= -1 then
+					local item = menu[list + 1]
+					if type(item.submenu) == 'table' then -- submenu
+						table.insert(prev_menus, {menu = menu, caption = caption})
+						if type(item.onclick) == 'function' then
+							item.onclick(menu, list + 1, item.submenu)
+						end
+						return display(item.submenu, id + 1, item.submenu.title and item.submenu.title or item.title)
+					elseif type(item.onclick) == 'function' then
+						local result = item.onclick(menu, list + 1)
+						if not result then return result end
+						return display(menu, id, caption)
+					end
+				else -- if button == 0
+					if #prev_menus > 0 then
+						local prev_menu = prev_menus[#prev_menus]
+						prev_menus[#prev_menus] = nil
+						return display(prev_menu.menu, id - 1, prev_menu.caption)
+					end
+					return false
+				end
+			end
+		until result
+	end
+	return display(menu, 31337, caption or menu.title)
+end
+
+
+
+function async_http_request(method, url, args, resolve, reject)
+	local request_lane = lanes.gen('*', {package = {path = package.path, cpath = package.cpath}}, function()
+		local requests = require 'requests'
+		local ok, result = pcall(requests.request, method, url, args)
+		if ok then
+			result.json, result.xml = nil, nil -- cannot be passed through a lane
+			return true, result
+		else
+			return false, result -- return error
+		end
+	end)
+	if not reject then reject = function() end end
+	lua_thread.create(function()
+		local lh = request_lane()
+		while true do
+			local status = lh.status
+			if status == 'done' then
+				local ok, result = lh[1], lh[2]
+				if ok then resolve(result) else reject(result) end
+				return
+			elseif status == 'error' then
+				return reject(lh[1])
+			elseif status == 'killed' or status == 'cancelled' then
+				return reject(status)
+			end
+			wait(0)
+		end
+	end)
+end
+
+
+
+function apply_custom_style()
+    imgui.SwitchContext()
+    local style = imgui.GetStyle()
+    local colors = style.Colors
+    local clr = imgui.Col
+    local ImVec4 = imgui.ImVec4
+
+    style.WindowRounding = 2.0
+    style.WindowTitleAlign = imgui.ImVec2(0.5, 0.84)
+    style.ChildWindowRounding = 2.0
+    style.FrameRounding = 2.0
+    style.ItemSpacing = imgui.ImVec2(5.0, 4.0)
+    style.ScrollbarSize = 13.0
+    style.ScrollbarRounding = 0
+    style.GrabMinSize = 8.0
+    style.GrabRounding = 1.0
+
+    colors[clr.FrameBg]                = ImVec4(0.16, 0.29, 0.48, 0.54)
+    colors[clr.FrameBgHovered]         = ImVec4(0.26, 0.59, 0.98, 0.40)
+    colors[clr.FrameBgActive]          = ImVec4(0.26, 0.59, 0.98, 0.67)
+    colors[clr.TitleBg]                = ImVec4(0.04, 0.04, 0.04, 1.00)
+    colors[clr.TitleBgActive]          = ImVec4(0.16, 0.29, 0.48, 1.00)
+    colors[clr.TitleBgCollapsed]       = ImVec4(0.00, 0.00, 0.00, 0.51)
+    colors[clr.CheckMark]              = ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[clr.SliderGrab]             = ImVec4(0.24, 0.52, 0.88, 1.00)
+    colors[clr.SliderGrabActive]       = ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[clr.Button]                 = ImVec4(0.26, 0.59, 0.98, 0.40)
+    colors[clr.ButtonHovered]          = ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[clr.ButtonActive]           = ImVec4(0.06, 0.53, 0.98, 1.00)
+    colors[clr.Header]                 = ImVec4(0.26, 0.59, 0.98, 0.31)
+    colors[clr.HeaderHovered]          = ImVec4(0.26, 0.59, 0.98, 0.80)
+    colors[clr.HeaderActive]           = ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[clr.Separator]              = colors[clr.Border]
+    colors[clr.SeparatorHovered]       = ImVec4(0.26, 0.59, 0.98, 0.78)
+    colors[clr.SeparatorActive]        = ImVec4(0.26, 0.59, 0.98, 1.00)
+    colors[clr.ResizeGrip]             = ImVec4(0.26, 0.59, 0.98, 0.25)
+    colors[clr.ResizeGripHovered]      = ImVec4(0.26, 0.59, 0.98, 0.67)
+    colors[clr.ResizeGripActive]       = ImVec4(0.26, 0.59, 0.98, 0.95)
+    colors[clr.TextSelectedBg]         = ImVec4(0.26, 0.59, 0.98, 0.35)
+    colors[clr.Text]                   = ImVec4(1.00, 1.00, 1.00, 1.00)
+    colors[clr.TextDisabled]           = ImVec4(0.50, 0.50, 0.50, 1.00)
+    colors[clr.WindowBg]               = ImVec4(0.06, 0.06, 0.06, 0.94)
+    colors[clr.ChildWindowBg]          = ImVec4(1.00, 1.00, 1.00, 0.00)
+    colors[clr.PopupBg]                = ImVec4(0.08, 0.08, 0.08, 0.94)
+    colors[clr.ComboBg]                = colors[clr.PopupBg]
+    colors[clr.Border]                 = ImVec4(0.43, 0.43, 0.50, 0.50)
+    colors[clr.BorderShadow]           = ImVec4(0.00, 0.00, 0.00, 0.00)
+    colors[clr.MenuBarBg]              = ImVec4(0.14, 0.14, 0.14, 1.00)
+    colors[clr.ScrollbarBg]            = ImVec4(0.02, 0.02, 0.02, 0.53)
+    colors[clr.ScrollbarGrab]          = ImVec4(0.31, 0.31, 0.31, 1.00)
+    colors[clr.ScrollbarGrabHovered]   = ImVec4(0.41, 0.41, 0.41, 1.00)
+    colors[clr.ScrollbarGrabActive]    = ImVec4(0.51, 0.51, 0.51, 1.00)
+    colors[clr.CloseButton]            = ImVec4(0.41, 0.41, 0.41, 0.50)
+    colors[clr.CloseButtonHovered]     = ImVec4(0.98, 0.39, 0.36, 1.00)
+    colors[clr.CloseButtonActive]      = ImVec4(0.98, 0.39, 0.36, 1.00)
+    colors[clr.PlotLines]              = ImVec4(0.61, 0.61, 0.61, 1.00)
+    colors[clr.PlotLinesHovered]       = ImVec4(1.00, 0.43, 0.35, 1.00)
+    colors[clr.PlotHistogram]          = ImVec4(0.90, 0.70, 0.00, 1.00)
+    colors[clr.PlotHistogramHovered]   = ImVec4(1.00, 0.60, 0.00, 1.00)
+    colors[clr.ModalWindowDarkening]   = ImVec4(0.80, 0.80, 0.80, 0.35)
+end
+
+apply_custom_style()
