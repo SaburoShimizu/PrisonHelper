@@ -16,7 +16,6 @@ script_properties("work-in-pause")
 
 
 imgui.Process = true
-overlaystat = imgui.ImBool(false)
 grafeks = imgui.ImBool(false)
 
 main_window_state = imgui.ImBool(false)
@@ -741,7 +740,7 @@ function checkmenu()
         },
         {
             title = string.format('%s Оверлей: %s', fcolor, pris.astoverlay and '{00FF00}Вкл' or '{FF0000}Выкл'),
-            onclick = function() pris.astoverlay = not pris.astoverlay overlaystat.v = pris.astoverlay inicfg.save(default, 'PrisonHelper') end
+            onclick = function() pris.astoverlay = not pris.astoverlay inicfg.save(default, 'PrisonHelper') end
         },
         {
             title = string.format('%s Мышка в /график: %s', fcolor, pris.mouse and '{00FF00}Вкл' or '{FF0000}Выкл'),
@@ -968,9 +967,8 @@ end
 varns = {}
 
 function overlaysuka()
-	overlaystat.v = not overlaystat.v
-	pris.astoverlay = not overlaystat.v
-	sampAddChatMessage(string.format('%s %s',teg, overlaystat.v and 'Оверлей включён' or 'Оверлей выключен'), -1)
+	pris.astoverlay = not pris.astoverlay
+	sampAddChatMessage(string.format('%s %s',teg, pris.astoverlay and 'Оверлей включён' or 'Оверлей выключен'), -1)
 end
 
 
@@ -1001,7 +999,6 @@ end
 function imgui.OnDrawFrame()
     if pris.astoverlay then
 		imgui.ShowCursor = false
-        if overlaystat.v then
             imgui.SetNextWindowPos(imgui.ImVec2(pris.Xovers, pris.Yovers), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
             imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
             imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize)
@@ -1010,7 +1007,6 @@ function imgui.OnDrawFrame()
             imgui.Text(u8(grafek)) -- простой текст внутри этого окна
             imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
             imgui.End() -- конец окна
-        end
     end
 	if grafeks.v then
 		if pris.mouse then imgui.ShowCursor = true end
