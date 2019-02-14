@@ -11,17 +11,18 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4.5')
+script_version('1.4.6')
 script_properties("work-in-pause")
 
 
 imgui.Process = true
 grafeks = imgui.ImBool(false)
+prishelp = imgui.ImBool(false)
+imguilec = imgui.ImBool(false)
 
-main_window_state = imgui.ImBool(false)
-text_buffer = imgui.ImBuffer(256)
+local btn_size = imgui.ImVec2(-0.1, 0)
 
-
+local offsendchat = nil
 local sw, sh = getScreenResolution()
 local rep = false
 local fftt = false
@@ -112,90 +113,9 @@ ph = [[{FF7000}/jd{d5dedd} - открыть/закрыть камеру (jaildoo
 {FF7000}/режим{d5dedd} - Лекции для заключённых
 {FF7000}/prisonoverlay{d5dedd} - Включить/выключить оверлей (без сохранения в INI)
 {FF7000}/prisonoverlaypos{d5dedd} - Настройка позиции оверлея (Требуется перезапуск после ввода)
-{FF7000}/prisonmenu{d5dedd} - Настройки скрипта]]
+{FF7000}/prisonmenu{d5dedd} - Настройки скрипта
 
-
-spisoc_lec = {
-    {
-        title = fcolor ..'1. Время',
-        submenu = {
-            title = teg ..'Время',
-            {
-                title = fcolor ..'Время начало',
-                onclick = function() vremnach() end
-            },
-            {
-                title = fcolor ..'Время конец',
-                onclick = function() vremkon() end
-            },
-        }
-    },
-    {
-        title = fcolor ..'2. Уборка',
-        submenu = {
-            title = teg ..'Уборка',
-            {
-                title = fcolor ..'Уборка и завтрак начало',
-                onclick = function() ubornach(0) end
-            },
-            {
-                title = fcolor ..'Уборка и завтрак конец',
-                onclick = function () uborkon(0) end
-            },
-            {
-                title = fcolor ..'Уборка всей тюрьмы начало',
-                onclick = function() ubornach(1) end
-            },
-            {
-                title = fcolor ..'Уборка всей тюрьмы конец',
-                onclick = function () uborkon(1) end
-            },
-        }
-    },
-    {
-        title = fcolor ..'3. Спортзал',
-        submenu = {
-            title = teg ..'Спортзал',
-            {
-                title = fcolor ..'Спорзал начало',
-                onclick = function() sportnach() end
-            },
-            {
-                title = fcolor ..'Спорзал конец',
-                onclick = function() sportkon() end
-            },
-        }
-    },
-    {
-        title = fcolor ..'4. Ужин',
-        submenu = {
-            title = teg ..'Ужин',
-            {
-                title = fcolor ..'Ужин начало',
-                onclick = function() uzhinnach() end
-            },
-            {
-                title = fcolor ..'Ужин конец',
-                onclick = function() uzhinkon() end
-            },
-        }
-    },
-    {
-        title = fcolor ..'5. Обед',
-        submenu = {
-            title = teg ..'Обед',
-            {
-                title = fcolor ..'Обед начало',
-                onclick = function() obednach() end
-            },
-            {
-                title = fcolor ..'Обед конец',
-                onclick = function() obedkon() end
-            },
-        }
-    },
-}
-
+{FF0000}Закрыть окно: Backspace, Enter, ESC]]
 
 
 
@@ -206,6 +126,8 @@ function main()
     -- register commands
     sampRegisterChatCommand("jd", jd)
 	sampRegisterChatCommand("график", function() grafeks.v = not grafeks.v end)
+	sampRegisterChatCommand("prisonhelp", function() prishelp.v = not prishelp.v end)
+	sampRegisterChatCommand("режим", function() imguilec.v = not imguilec.v end)
 	sampRegisterChatCommand("prisonoverlay", overlaysuka)
 	sampRegisterChatCommand("prisonoverlaypos", overlaypos)
     sampRegisterChatCommand("prisonreload", reloader)
@@ -219,7 +141,7 @@ function main()
     sampRegisterChatCommand("куф", cuff)
     sampRegisterChatCommand("ункуф", uncuff)
     sampRegisterChatCommand("кпз", kpz)
-    sampRegisterChatCommand("режим", function() if kpzblyat:status() == 'suspended' or kpzblyat:status() == 'dead' then kpzblyat:run() else sampAddChatMessage(teg..'Данная функция уже работает. Если произошла ошибка перезапустите скрипт', - 1) end end)
+    --sampRegisterChatCommand("режим", function() if kpzblyat:status() == 'suspended' or kpzblyat:status() == 'dead' then kpzblyat:run() else sampAddChatMessage(teg..'Данная функция уже работает. Если произошла ошибка перезапустите скрипт', - 1) end end)
     sampRegisterChatCommand("кпз-врем", kpzvrem)
     sampRegisterChatCommand("кпз-кон", kpzkon)
     sampRegisterChatCommand("стол", stol)
@@ -227,7 +149,7 @@ function main()
     sampRegisterChatCommand('prisonmenu', function() lua_thread.create(menu) end)
     sampRegisterChatCommand('fastmenu', function() if fastmenuthread:status() == 'suspended' or fastmenuthread:status() == 'dead' then fastmenuthread:run() else sampAddChatMessage(teg..'Данная функция уже работает. Если произошла ошибка перезапустите скрипт', - 1) end end)
     --sampRegisterChatCommand("график", raspisanie)
-    sampRegisterChatCommand("prisonhelp", prisonhelp)
+    --sampRegisterChatCommand("prisonhelp", prisonhelp)
     sampRegisterChatCommand("уведомления", function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end)
     sampRegisterChatCommand("prisonsetime", function() prisontime = true sampSendChat('/c 60') end)
 
@@ -247,9 +169,8 @@ function main()
         pris = ini.prison
         fasttime = pris.fasttime
 
-
-        if kpzblyat:status() == 'running' or kpzblyat:status() == nil then if isKeyDown(VK_MENU) and isKeyJustPressed(VK_OEM_5) then kpzblyat:terminate() sampAddChatMessage(teg ..'Зачитывание лекции остановлено', - 1) end end
-        if fastmenuthread:status() == 'running' or fastmenuthread:status() == nil then if isKeyDown(VK_MENU) and isKeyJustPressed(VK_OEM_5) then fastmenuthread:terminate() sampAddChatMessage(teg ..'Быстрое меню выключено/перезагружено.', - 1) if fastmenu == true then fastmenuthread:run() end end end
+		if offsendchat ~= nil then if isKeyDown(VK_MENU) and isKeyJustPressed(VK_OEM_5) then offsendchat:terminate() sampAddChatMessage(teg ..'Зачитка лекции остановлена', - 1) end end
+        if fastmenuthread:status() == 'running' or fastmenuthread:status() == nil then if isKeyDown(VK_MENU) and isKeyJustPressed(VK_OEM_5) then fastmenuthread:terminate() if fastmenu == false then sampAddChatMessage(teg ..'Быстрое меню выключено', - 1) else if fastmenu == true then fastmenuthread:run() end end end end
 
 
         -- Загрузка времени
@@ -998,29 +919,69 @@ end
 
 function imgui.OnDrawFrame()
     if pris.astoverlay then
-		imgui.ShowCursor = false
-            imgui.SetNextWindowPos(imgui.ImVec2(pris.Xovers, pris.Yovers), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-            imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
-            imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize)
-            imgui.ShowCursor = false
-            grafek = grafiktimesoverlay()
-            imgui.Text(u8(grafek)) -- простой текст внутри этого окна
-            imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
-            imgui.End() -- конец окна
+        imgui.ShowCursor = false
+        imgui.SetNextWindowPos(imgui.ImVec2(pris.Xovers, pris.Yovers), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
+        imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize)
+        imgui.ShowCursor = false
+        grafek = grafiktimesoverlay()
+        imgui.Text(u8(grafek)) -- простой текст внутри этого окна
+        imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
+        imgui.End() -- конец окна
     end
-	if grafeks.v then
-		if pris.mouse then imgui.ShowCursor = true end
-		if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then grafeks.v = not grafeks.v end
-		imgui.SetNextWindowPos(imgui.ImVec2(sw/2, sh/2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-		imgui.SetNextWindowSize(imgui.ImVec2(500, 500), imgui.Cond.FirstUseEver)
-		imgui.Begin(u8'График тюрьмы', grafeks)
-		imgui.CenterTextColoredRGB(rasp)
+    if grafeks.v then
+        if pris.mouse then imgui.ShowCursor = true end
+        if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then grafeks.v = not grafeks.v end
+        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(500, 500), imgui.Cond.FirstUseEver)
+        imgui.Begin(u8'График тюрьмы', grafeks)
+        imgui.CenterTextColoredRGB(rasp)
+        imgui.End()
+    end
+    if prishelp.v then
+        imgui.ShowCursor = true
+        if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then grafeks.v = not grafeks.v end
+        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(530, 450), imgui.Cond.FirstUseEver)
+        imgui.Begin(u8'Помощь по PrisonHelper', prishelp)
+        imgui.CenterTextColoredRGB(ph)
+        imgui.End()
+    end
+	if imguilec.v then
+		imgui.ShowCursor = true
+		imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(500, 300), imgui.Cond.FirstUseEver)
+		imgui.Begin(u8'[PrisonHelper] Лекции для заключённых', imguilec)
+		if imgui.CollapsingHeader(u8'1. Время') then
+			if imgui.MenuItem(u8'Время начало', btn_size) then offsendchat = lua_thread.create(function() vremnach() end) imguilec.v = false end
+			if imgui.MenuItem(u8'Время конец', btn_size) then offsendchat = lua_thread.create(function() vremkon() end) imguilec.v = false end
+			imgui.Text('\n')
+		end
+		if imgui.CollapsingHeader(u8'2. Уборка') then
+			if imgui.MenuItem(u8'Уборка и завтрак начало', btn_size) then offsendchat = lua_thread.create(function() ubornach(0) end) imguilec.v = false end
+			if imgui.MenuItem(u8'Уборка и завтрак конец', btn_size) then offsendchat = lua_thread.create(function() uborkon(0) end) imguilec.v = false end
+			if imgui.MenuItem(u8'Уборка всей тюрьмы начало', btn_size) then offsendchat = lua_thread.create(function() ubornach(1) end) imguilec.v = false end
+			if imgui.MenuItem(u8'Уборка всей тюрьмы конец', btn_size) then offsendchat = lua_thread.create(function() uborkon(1) end) imguilec.v = false end
+			imgui.Text('\n')
+		end
+		if imgui.CollapsingHeader(u8'3. Спортзал') then
+			if imgui.MenuItem(u8'Спорзал начало', btn_size) then offsendchat = lua_thread.create(function() sportnach() end) imguilec.v = false end
+			if imgui.MenuItem(u8'Спорзал конец', btn_size) then offsendchat = lua_thread.create(function() sportkon() end) imguilec.v = false end
+			imgui.Text('\n')
+		end
+		if imgui.CollapsingHeader(u8'4. Ужин') then
+			if imgui.MenuItem(u8'Ужин начало', btn_size) then offsendchat = lua_thread.create(function() uzhinnach() end) imguilec.v = false end
+			if imgui.MenuItem(u8'Ужин конец', btn_size) then offsendchat = lua_thread.create(function() uzhinkon() end) imguilec.v = false end
+			imgui.Text('\n')
+		end
+		if imgui.CollapsingHeader(u8'5. Обед') then
+			if imgui.MenuItem(u8'Обед начало', btn_size) then offsendchat = lua_thread.create(function() obednach() end) imguilec.v = false end
+			if imgui.MenuItem(u8'Обед конец', btn_size) then offsendchat = lua_thread.create(function() obedkon() end) imguilec.v = false end
+			imgui.Text('\n')
+		end
 		imgui.End()
 	end
 end
-
-
-
 
 
 
