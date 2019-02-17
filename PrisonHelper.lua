@@ -14,7 +14,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4.7')
+script_version('1.4.8')
 script_properties("work-in-pause")
 
 
@@ -66,6 +66,9 @@ hour = pris.hour
 aupd = pris.aupd
 grafiktime = pris.grafiktime
 fastmenu = pris.fastmenu
+InfoX = pris.Xovers
+InfoY = pris.Yovers
+
 
 rasp = [[		{FF0000}Понедельник - Пятница
 
@@ -916,22 +919,20 @@ end
 
 function overlaypos()
     lua_thread.create(function()
-        sampAddChatMessage(teg ..'Для применения нажмите {FF7000}ЛКМ', - 1)
+        sampAddChatMessage(teg ..'Для применения нажмите {FF7000}Enter', - 1)
         robotet = true
 		showCursor(true, true)
 		while robotet == true do
             wait(0)
-            local Xover, Yover = getCursorPos()
-			Xovers = Xover
-			Yovers = Yover
-            if isKeyDown(VK_LBUTTON) then robotet = false end
+            InfoX, InfoY = getCursorPos()
+            if isKeyDown(VK_RETURN) then robotet = false end
         end
 		wait(500)
-		pris.Xovers = Xovers
-		pris.Yovers = Yovers
+		pris.Xovers = InfoX
+		pris.Yovers = InfoY
 		inicfg.save(default, 'PrisonHelper')
 		showCursor(false, false)
-        sampAddChatMessage(teg..pris.Xovers, - 1)
+        print('X: '..InfoX ..' Y: '..InfoY)
 		imgui.Process = false
 		imgui.Process = true
     end)
@@ -951,9 +952,9 @@ function imgui.OnDrawFrame()
 	end]]
     if pris.astoverlay then
         imgui.ShowCursor = false
-        imgui.SetNextWindowPos(imgui.ImVec2(pris.Xovers, pris.Yovers), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowPos(imgui.ImVec2(InfoX, InfoY), _, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
-        imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoSavedSettings)
+        imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
         imgui.ShowCursor = false
         grafek = grafiktimesoverlay()
         imgui.Text(u8(grafek)) -- простой текст внутри этого окна
@@ -962,7 +963,7 @@ function imgui.OnDrawFrame()
     end
     if pris.fastmenu then
         local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
-		imgui.ShowCursor = falsew
+		imgui.ShowCursor = false
         if result then peds = ped; _, id = sampGetPlayerIdByCharHandle(peds); name = sampGetPlayerNickname(id) end
         if not sampIsDialogActive() and not sampIsChatInputActive() and not isGamePaused() and not isSampfuncsConsoleActive() and isKeyDown(0x02) and not fastmenus.v == true then fastmenus.v = isKeyJustPressed(VK_G) end
         if fastmenus.v then
@@ -1033,7 +1034,7 @@ function imgui.OnDrawFrame()
         imgui.ShowCursor = true
         imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(500, 300), imgui.Cond.FirstUseEver)
-        imgui.Begin(u8'[PrisonHelper] Лекции для заключённых', imguilec, imgui.WindowFlags.NoSavedSettings)
+        imgui.Begin(u8'[PrisonHelper] Лекции для заключённых', imguilec, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
         if imgui.CollapsingHeader(u8'1. Время') then
             if imgui.MenuItem(u8'Время начало', btn_size) then offsendchat = lua_thread.create(function() vremnach() end) imguilec.v = false end
             if imgui.MenuItem(u8'Время конец', btn_size) then offsendchat = lua_thread.create(function() vremkon() end) imguilec.v = false end
