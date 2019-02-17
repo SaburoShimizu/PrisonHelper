@@ -642,10 +642,8 @@ end
 function apdeit()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelperVer', nil --[[параметры запроса]],
         function(resp) -- вызовется при успешном выполнении и получении ответа
-			stupd = false
-	 		lua_thread.create(function() vers(resp.text) end)
+	 		lua_thread.create(function() newvers = resp.text:match('Ver = (.+), URL.+') if newvers > thisScript().version then sampAddChatMessage(teg ..'Обнаружено обновление до v.{FF0000}'..newvers ..'{01A0E9}. Для обновления используйте /prisonmenu', -1) elseif newvers == thisScript().version then sampAddChatMessage(teg..'У вас актуальная версия скрипта.', -1) elseif newvers < thisScript().version then sampAddChatMessage(teg..'У вас тестовая версия скрипта.', -1) end end)
 			print('Проверка обновления')
-			stupd = true
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
             print(err)
@@ -658,7 +656,15 @@ end
 function updates()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelper.lua', nil --[[параметры запроса]],
         function(respe) -- вызовется при успешном выполнении и получении ответа
-            lua_thread.create(function() obn(respe.text) end)
+            lua_thread.create(function() if #respe.text > 0 then
+        f = io.open(getWorkingDirectory() ..'/PrisonHelper.lua', 'wb')
+        f:write(u8:decode(respe.text))
+        f:close()
+        sampAddChatMessage(teg ..'Обновление успешно скачалось. Скрипт перезапуститься автоматически', - 1)
+        thisScript():reload()
+	else
+		sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже', -3)
+    end end)
 			print('Установка обновления скрипта')
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
