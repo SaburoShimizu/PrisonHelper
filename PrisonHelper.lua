@@ -642,7 +642,7 @@ end
 function apdeit()
     async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelperVer', nil --[[параметры запроса]],
         function(resp) -- вызовется при успешном выполнении и получении ответа
-	 		lua_thread.create(function() newvers = resp.text:match('Ver = (.+), URL.+') if newvers > thisScript().version then sampAddChatMessage(teg ..'Обнаружено обновление до v.{FF0000}'..newvers ..'{01A0E9}. Для обновления используйте /prisonmenu', -1) elseif newvers == thisScript().version then sampAddChatMessage(teg..'У вас актуальная версия скрипта.', -1) elseif newvers < thisScript().version then sampAddChatMessage(teg..'У вас тестовая версия скрипта.', -1) end end)
+	 		lua_thread.create(function() newvers = resp.text:match('Version = (.+), URL.+') if newvers > thisScript().version then sampAddChatMessage(teg ..'Обнаружено обновление до v.{FF0000}'..newvers ..'{01A0E9}. Для обновления используйте /prisonmenu', -1) elseif newvers == thisScript().version then sampAddChatMessage(teg..'У вас актуальная версия скрипта.', -1) elseif newvers < thisScript().version then sampAddChatMessage(teg..'У вас тестовая версия скрипта.', -1) end end)
 			print('Проверка обновления')
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
@@ -962,6 +962,7 @@ function imgui.OnDrawFrame()
     end
     if pris.fastmenu then
         local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
+		imgui.ShowCursor = falsew
         if result then peds = ped; _, id = sampGetPlayerIdByCharHandle(peds); name = sampGetPlayerNickname(id) end
         if not sampIsDialogActive() and not sampIsChatInputActive() and not isGamePaused() and not isSampfuncsConsoleActive() and isKeyDown(0x02) and not fastmenus.v == true then fastmenus.v = isKeyJustPressed(VK_G) end
         if fastmenus.v then
