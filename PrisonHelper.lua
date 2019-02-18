@@ -850,33 +850,34 @@ function imgui.OnDrawFrame()
             imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
             imgui.Begin(u8(string.format('%s[%d] Преды: %d', name, id, checkwarn(name))), fastmenus, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
             if imgui.CollapsingHeader(u8'Обычные (Без команд)') then
-                if imgui.MenuItem(u8'Привет') then privet(id) fastmenu.v = false end
-                if imgui.MenuItem(u8'Отмычка') then otm(id) fastmenu.v = false end
-                if imgui.MenuItem(u8'Стол') then stol(id) fastmenu.v = false end
-                if imgui.MenuItem(u8'Стол (Адвокат)') then stoladv(id) fastmenu.v = false end
+                if imgui.MenuItem(u8'Привет') then privet(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'Отмычка') then otm(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'Отмычка (Предупреждение)') then warnotm(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'Стол') then stol(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'Стол (Адвокат)') then stoladv(id) fastmenus.v = false end
             end
             if imgui.CollapsingHeader(u8'Команды') then
-                if imgui.MenuItem('/cuff') then cuff(id) fastmenu.v = false end
-                if imgui.MenuItem('/uncuff') then uncuff(id) fastmenu.v = false end
-                if imgui.MenuItem('/hold') then sampProcessChatInput('/hold '..id) fastmenu.v = false end
-                if imgui.MenuItem('/jd') then jd() fastmenu.v = false end
+                if imgui.MenuItem('/cuff') then cuff(id) fastmenus.v = false end
+                if imgui.MenuItem('/uncuff') then uncuff(id) fastmenus.v = false end
+                if imgui.MenuItem('/hold') then sampProcessChatInput('/hold '..id) fastmenus.v = false end
+                if imgui.MenuItem('/jd') then jd() fastmenus.v = false end
             end
             if imgui.CollapsingHeader(u8'КПЗ') then
-                if imgui.MenuItem(u8'КПЗ') then kpz(id) fastmenu.v = false end
-                if imgui.MenuItem(u8'КПЗ - врем') then kpzvrem(id) fastmenu.v = false end
-                if imgui.MenuItem(u8'КПЗ - кон') then kpzvrem(id) fastmenu.v = false end
+                if imgui.MenuItem(u8'КПЗ') then kpz(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'КПЗ - врем') then kpzvrem(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'КПЗ - кон') then kpzvrem(id) fastmenus.v = false end
             end
             if imgui.CollapsingHeader(u8'Быстрый репорт (Нон рп)') then
-                if imgui.MenuItem(u8'ДМ КПЗ') then SendReport(string.format('%s[%d] ДМит в КПЗ', name, id)) fastmenu.v = false end
-                if imgui.MenuItem(u8'Сбивы анимаций') then SendReport(string.format('%s[%d] сбивает анимации в КПЗ', name, id)) fastmenu.v = false end
-                if imgui.MenuItem(u8'АФК от /hold') then SendReport(string.format('%s[%d] AFK от /hold', name, id)) fastmenu.v = false end
-                if imgui.MenuItem(u8'Нон РП анимации') then SendReport(string.format('%s[%d] НРП анимации', name, id)) fastmenu.v = false end
-                if imgui.MenuItem(u8'Нон РП поведение') then SendReport(string.format('%s[%d] НРП поведение', name, id)) fastmenu.v = false end
+                if imgui.MenuItem(u8'ДМ КПЗ') then SendReport(string.format('%s[%d] ДМит в КПЗ', name, id)) fastmenus.v = false end
+                if imgui.MenuItem(u8'Сбивы анимаций') then SendReport(string.format('%s[%d] сбивает анимации в КПЗ', name, id)) fastmenus.v = false end
+                if imgui.MenuItem(u8'АФК от /hold') then SendReport(string.format('%s[%d] AFK от /hold', name, id)) fastmenus.v = false end
+                if imgui.MenuItem(u8'Нон РП анимации') then SendReport(string.format('%s[%d] НРП анимации', name, id)) fastmenus.v = false end
+                if imgui.MenuItem(u8'Нон РП поведение') then SendReport(string.format('%s[%d] НРП поведение', name, id)) fastmenus.v = false end
             end
             if imgui.CollapsingHeader(u8'Быстрый репорт (Чат)') then
-                if imgui.MenuItem(u8'Оскорбления / маты') then SendReport(string.format('%s[%d] оск + маты', name, id)) fastmenu.v = false end
-                if imgui.MenuItem(u8'Флуд') then SendReport(string.format('%s[%d] флуд', name, id)) fastmenu.v = false end
-                if imgui.MenuItem(u8'НРП /me') then SendReport(string.format('%s[%d] НРП /me', name, id)) fastmenu.v = false end
+                if imgui.MenuItem(u8'Оскорбления / маты') then SendReport(string.format('%s[%d] оск + маты', name, id)) fastmenus.v = false end
+                if imgui.MenuItem(u8'Флуд') then SendReport(string.format('%s[%d] флуд', name, id)) fastmenus.v = false end
+                if imgui.MenuItem(u8'НРП /me') then SendReport(string.format('%s[%d] НРП /me', name, id)) fastmenus.v = false end
             end
             if imgui.CollapsingHeader(u8'Быстрый репорт (Своя причина)') then
 				imgui.Text(u8'Вводите только причину жалобы.')
@@ -899,6 +900,7 @@ function imgui.OnDrawFrame()
         imgui.CenterTextColoredRGB(rasp)
         imgui.End()
     end
+
     if prishelp.v then
         if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then prishelp.v = false end
         imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
