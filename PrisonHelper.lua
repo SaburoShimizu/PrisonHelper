@@ -1,14 +1,37 @@
-local SE = require 'lib.samp.events'
-local inicfg = require 'inicfg'
-local dlstatus = require('moonloader').download_status
-require('lib.moonloader')
-local sf = require 'sampfuncs'
+local errr, SE = pcall(require, 'lib.samp.events')
+assert(errr, 'Library SAMP Events not found')
+
+local errr, inicfg = pcall(require,  'inicfg')
+assert(errr, 'Library INI cfg not found')
+
+local res = pcall(require, "lib.moonloader")
+assert(res, 'Library lib.moonloader not found')
+
+local errr, sf = pcall(require, 'sampfuncs')
+assert(errr, 'Library Sampfuncs not found')
+
+local errr, rkeys = pcall(require, 'rkeys')
+assert(errr, 'Library rKeys not found')
+
+local errr, vkeys = pcall(require, 'vkeys')
+assert(errr, 'Library vKeys not found')
+
 local lanes = require('lanes').configure()
-local encoding = require 'encoding'
-local imgui = require 'imgui'
-local imadd = require 'imgui_addons'
-local pie = require 'imgui_piemenu2'
-local notf = import 'imgui_notf.lua'
+local errr, encoding = pcall(require, 'encoding')
+assert(errr, 'Library Encoding not found')
+
+local errr, imgui = pcall(require, 'imgui')
+assert(errr, 'Library Imgui not found')
+
+local errr, imadd = pcall(require, 'imgui_addons')
+assert(errr, 'Library Imgui Addons not found')
+
+local errr, pie = pcall(require, 'imgui_piemenu2')
+assert(errr, 'Library Pie Menu not found')
+
+local errr, notf = pcall(import, 'imgui_notf.lua')
+assert(errr, 'Library Imgui Notification not found')
+
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
@@ -18,11 +41,7 @@ script_version('1.4.8')
 script_properties("work-in-pause")
 
 
-imgui.Process = false
-grafeks = imgui.ImBool(false)
-prishelp = imgui.ImBool(false)
-imguilec = imgui.ImBool(false)
-fastmenus = imgui.ImBool(false)
+
 --test = imgui.ImBool(true)
 
 local btn_size = imgui.ImVec2(-0.1, 0)
@@ -38,7 +57,7 @@ local aupd = nil
 local teg = '{FF7000}[PrisonHelper] {01A0E9}'
 local fcolor = '{01A0E9}'
 local stupd = false
-local kpzblyat = lua_thread.create_suspended(function() submenus_show(spisoc_lec, teg..'Лекции', 'Ok', 'Ne ok!', 'Nozad') end)
+--local kpzblyat = lua_thread.create_suspended(function() submenus_show(spisoc_lec, teg..'Лекции', 'Ok', 'Ne ok!', 'Nozad') end)
 --local fastmenuthread = lua_thread.create_suspended(function() fastmenufunc() end)
 local paydayinformer = lua_thread.create_suspended(function() pdinf() end)
 
@@ -68,6 +87,25 @@ grafiktime = pris.grafiktime
 fastmenu = pris.fastmenu
 InfoX = pris.Xovers
 InfoY = pris.Yovers
+
+
+
+imgui.Process = false
+grafeks = imgui.ImBool(false)
+prishelp = imgui.ImBool(false)
+imguilec = imgui.ImBool(false)
+fastmenus = imgui.ImBool(false)
+prisonmenu = imgui.ImBool(false)
+jbsuka = imgui.ImBuffer(256)
+
+local raspchat = imgui.ImBool(fasttime)
+local overllay = imgui.ImBool(pris.astoverlay)
+local mish = imgui.ImBool(pris.mouse)
+local grafintime = imgui.ImBool(pris.grafiktime)
+local nappayday = imgui.ImBool(pris.paydayhelp)
+local fastmennu = imgui.ImBool(pris.fastmenu)
+local avtoobnova = imgui.ImBool(pris.aupd)
+
 
 
 rasp = [[		{FF0000}Понедельник - Пятница
@@ -136,7 +174,6 @@ function main()
     if aupd == true then apdeit() end
     -- register commands
     sampRegisterChatCommand("jd", jd)
-    sampRegisterChatCommand("варн", pluswarn)
 	sampRegisterChatCommand("график", function() grafeks.v = not grafeks.v end)
 	sampRegisterChatCommand("prisonhelp", function() prishelp.v = not prishelp.v end)
 	sampRegisterChatCommand("режим", function() imguilec.v = not imguilec.v end)
@@ -153,15 +190,11 @@ function main()
     sampRegisterChatCommand("куф", cuff)
     sampRegisterChatCommand("ункуф", uncuff)
     sampRegisterChatCommand("кпз", kpz)
-    --sampRegisterChatCommand("режим", function() if kpzblyat:status() == 'suspended' or kpzblyat:status() == 'dead' then kpzblyat:run() else sampAddChatMessage(teg..'Данная функция уже работает. Если произошла ошибка перезапустите скрипт', - 1) end end)
     sampRegisterChatCommand("кпз-врем", kpzvrem)
     sampRegisterChatCommand("кпз-кон", kpzkon)
     sampRegisterChatCommand("стол", stol)
     sampRegisterChatCommand("отмычка", otm)
-    sampRegisterChatCommand('prisonmenu', function() lua_thread.create(menu) end)
-    --sampRegisterChatCommand('fastmenu', function() if fastmenuthread:status() == 'suspended' or fastmenuthread:status() == 'dead' then fastmenuthread:run() else sampAddChatMessage(teg..'Данная функция уже работает. Если произошла ошибка перезапустите скрипт', - 1) end end)
-    --sampRegisterChatCommand("график", raspisanie)
-    --sampRegisterChatCommand("prisonhelp", prisonhelp)
+    sampRegisterChatCommand('prisonmenu', function() prisonmenu.v = not prisonmenu.v end)
     sampRegisterChatCommand("уведомления", function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end)
     sampRegisterChatCommand("prisonsetime", function() prisontime = true sampSendChat('/c 60') end)
 
@@ -190,14 +223,6 @@ function main()
         local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
         local dt = os.date("*t", os.time(dt))
     end
-end
-
-function raspisanie()
-    sampShowDialog(31232, '{F70000}График работы тюрьмы и заключённых:', rasp, 'Ok!', _, 0)
-end
-
-function prisonhelp()
-    sampShowDialog(12312, 'Prison Helper', ph, 'Ok!', _, 0)
 end
 
 function warnotm(id)
@@ -607,19 +632,15 @@ function SendReport(args)
     end)
 end
 
-function SendReportDialog(pedid, name)
-	if fastmenus.v then fastmenus.v = false end
-    reptext = [[	{FF7000}Введи своё сообщение для быстрого отправления в репорт
-
-	{FF0000}Внимание! Вводите только причину (с маленькой буквы). Ник и ID будет автоматически отправлен!]]
-    lua_thread.create(function()
-        sampShowDialog(830, teg ..'Репорт на '..name..'['..pedid..'] ', reptext, '{FF7000}Отправить', '{FF0000}Отмена', 1)
-        while sampIsDialogActive() and sampGetCurrentDialogId() == 830 do wait(0) end
-        local resultMain, buttonMain, typ, tryyy = sampHasDialogRespond(830)
-        if resultMain then
-            if buttonMain == 1 and tryyy ~= '' and tryyy ~= ' ' then SendReport(name..'['..pedid..'] '..tryyy) elseif buttonMain == 0 then sampAddChatMessage(teg ..'Вы закрыли диалог с быстрым репортом.', - 1) else sampAddChatMessage(teg ..'Вы ничего не ввели', - 1) end
-        end
-    end)
+function SendReportDialog(id, name, args)
+	lua_thread.create(function()
+		rep = true
+		sampSendChat('/mn')
+		sampSendDialogResponse(27, 1, 5, - 1)
+		sampSendDialogResponse(80, 1, - 1, name..'['..id..'] '..args)
+		wait(1200)
+		rep = false
+	end)
 end
 
 
@@ -677,192 +698,6 @@ function updates()
 end
 
 
-function checkmenu()
-    my_dialog = {
-        {
-            title = string.format('%s Расписание в чате: %s', fcolor, pris.fasttime and '{00FF00}Вкл' or '{FF0000}Выкл'),
-            onclick = function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end
-        },
-        {
-            title = string.format('%s Оверлей: %s', fcolor, pris.astoverlay and '{00FF00}Вкл' or '{FF0000}Выкл'),
-            onclick = function() pris.astoverlay = not pris.astoverlay inicfg.save(default, 'PrisonHelper') end
-        },
-        {
-            title = string.format('%s Мышка в /график: %s', fcolor, pris.mouse and '{00FF00}Вкл' or '{FF0000}Выкл'),
-            onclick = function() pris.mouse = not pris.mouse inicfg.save(default, 'PrisonHelper') end
-        },
-        {
-            title = string.format('%s Автонастройка времени. Время от МСК: {FF7000}%s', fcolor, pris.hour),
-            onclick = function() prisontime = true sampSendChat('/c 60') end
-        },
-        {
-            title = string.format('%s Уведомомления о графике в /c 60: %s', fcolor, grafiktime and '{00FF00}Вкл' or '{FF0000}Выкл'),
-            onclick = function() pris.grafiktime = not pris.grafiktime grafiktime = pris.grafiktime inicfg.save(default, 'PrisonHelper') end
-        },
-        {
-            title = string.format('%s Напоминание о PayDay: %s', fcolor, pris.paydayhelp and '{00FF00}Вкл' or '{FF0000}Выкл'),
-            onclick = function() pris.paydayhelp = not pris.paydayhelp inicfg.save(default, 'PrisonHelper') end
-        },
-        {
-            title = string.format('%s Быстрое меню: %s', fcolor, fastmenu and '{00FF00}Вкл' or '{FF0000}Выкл'),
-            submenu = {
-                title = string.format('%s Быстрое меню: %s', teg, fastmenu and '{00FF00}Вкл' or '{FF0000}Выкл'),
-                {
-                    title = string.format('%s Быстрое меню (без сохранения в INI): %s', fcolor, fastmenu and '{00FF00}Вкл' or '{FF0000}Выкл'),
-                    onclick = function() fastmenu = not fastmenu end
-                },
-                {
-                    title = string.format('%s Быстрое меню (С сохранением в INI): %s', fcolor, fastmenu and '{00FF00}Вкл' or '{FF0000}Выкл'),
-                    onclick = function() pris.fastmenu = not pris.fastmenu fastmenu = pris.fastmenu inicfg.save(default, 'PrisonHelper') end
-                },
-            },
-        },
-				{
-					title = ' ',
-				},
-        {
-            title = string.format('%s Информация о скрипте', fcolor),
-            onclick = prisonhelp
-        },
-        {
-            title = string.format('%s Перезапустить скрипт', fcolor),
-            onclick = reloader
-        },
-        {
-            title = string.format('%s Обновление скрипта', fcolor),
-            submenu = {
-                title = string.format('%s Текущая версия скрипта: {FF0000}%s', teg, thisScript().version),
-                {
-                    title = string.format('%s Автообновление скрипта: %s', fcolor, pris.aupd and '{00FF00}Вкп' or '{FF0000}Выкл'),
-                    onclick = function() pris.aupd = not pris.aupd inicfg.save(default, 'PrisonHelper') sampAddChatMessage(string.format('%s Автообновление %s', teg, pris.aupd and '{00FF00}включено' or '{FF0000}выключено'), - 1) end
-                },
-                {
-                    title = string.format('%s Проверить наличие обновления', fcolor),
-                    onclick = function() apdeit() end
-                },
-                {
-                    title = string.format('%s Принудительное обновление', fcolor),
-                    onclick = function() updates() end
-                }
-            },
-        }
-    }
-end
-
-function menu()
-    checkmenu()
-    submenus_show(my_dialog, teg..'Настройки', 'Выбрать', 'Отменить', 'Назад')
-end
-
-
-
-
-
-function checkfunctionsmenu(pedid, name)
-    functionsmenu = {
-        {
-            title = string.format('%s Привет', fcolor),
-            onclick = function() privet(pedid) end
-        },
-        {
-            title = string.format('%s Варн', fcolor),
-            onclick = function() warn(pedid) end
-        },
-        {
-            title = string.format('%s Решётка', fcolor),
-            onclick = function() reshotka(pedid) end
-        },
-        {
-            title = string.format('%s /cuff', fcolor),
-            onclick = function() cuff(pedid) end
-        },
-        {
-            title = string.format('%s /uncuff', fcolor),
-            onclick = function() uncuff(pedid) end
-        },
-        {
-            title = string.format('%s /hold', fcolor),
-            onclick = function() sampProcessChatInput('/hold '..pedid) end
-        },
-        {
-            title = string.format('%s Отмычка', fcolor),
-            onclick = function() otm() end
-        },
-        {
-            title = string.format('%s Отмычка-варн', fcolor),
-            onclick = function() warnotm(pedid) end
-        },
-        {
-            title = string.format('%s КПЗ', fcolor),
-            submenu = {
-                title = string.format('%s КПЗ', fcolor),
-                {
-                    title = string.format('%s КПЗ', fcolor),
-                    onclick = function() kpz(pedid) end
-                },
-                {
-                    title = string.format('%s КПЗ-врем', fcolor),
-                    onclick = function() kpzvrem(pedid) end
-                },
-                {
-                    title = string.format('%s КПЗ-кон', fcolor),
-                    onclick = function() kpzkon(pedid) end
-                },
-            },
-        },
-        {
-            title = string.format('%s Стол', fcolor),
-            onclick = function() stol(pedid) end
-        },
-        {
-            title = string.format('%s Стол (Адвокат)', fcolor),
-            onclick = function() stoladv() end
-        },
-		{
-			title = string.format('{FF7000} Быстрый репорт'),
-			submenu = {
-				title = string.format('%s Быстрый репорт', fcolor),
-				{
-					title = string.format('%s ДМ КПЗ', fcolor),
-					onclick = function() SendReport(string.format('%s[%d] ДМит в КПЗ', name, pedid)) end
-				},
-				{
-					title = string.format('%s Сбивы анимации', fcolor),
-					onclick = function() SendReport(string.format('%s[%d] сбивает анимации в КПЗ', name, pedid)) end
-				},
-				{
-					title = string.format('%s AFK от /hold', fcolor),
-					onclick = function() SendReport(string.format('%s[%d] AFK от /hold', name, pedid)) end
-				},
-				{
-					title = string.format('%s Оскорбления / маты', fcolor),
-					onclick = function() SendReport(string.format('%s[%d] оск + маты', name, pedid)) end
-				},
-				{
-					title = string.format('%s Флуд', fcolor),
-					onclick = function() SendReport(string.format('%s[%d] flood в кпз', name, pedid)) end
-				},
-				{
-					title = string.format('%s НРП /me', fcolor),
-					onclick = function() SendReport(string.format('%s[%d] НРП /me', name, pedid)) end
-				},
-				{
-					title = string.format('%s Нон РП анимации', fcolor),
-					onclick = function() SendReport(string.format('%s[%d] НРП анимации в КПЗ', name, pedid)) end
-				},
-				{
-					title = string.format('%s Нон РП поведение', fcolor),
-					onclick = function() SendReport(string.format('%s[%d] НРП поведение в КПЗ', name, pedid)) end
-				},
-				{
-					title = string.format('{FF7000} Своя причина'),
-					onclick = function() SendReportDialog(pedid, name) end
-				},
-			},
-		},
-    }
-end
-
 
 function fastmenufunc()
     sampAddChatMessage(teg ..'Быстрое меню {00FF00}включено', - 1)
@@ -902,7 +737,7 @@ function pluswarn(id)
 	local name = sampGetPlayerNickname(id)
 	if varns[name] ~= nil then varns[name] = varns[name] + 1 else varns[name] = 1 end
 	checkwarn(name)
-	notf.addNotification(string.format('Выдано предупреждение зеку\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]),15)
+	notf.addNotification(string.format('Выдано предупреждение зеку\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
 end
 
 function minuswarn(name)
@@ -940,81 +775,124 @@ end
 
 
 function imgui.OnDrawFrame()
-    --[[if test.v then
-		imgui.Begin('test')
-		imgui.Text(u8'Сабура топ')
-		imgui.SameLine(365)
-		imadd.ToggleButton('Test1##1', test)
-		imgui.Text(u8'Антон лох')
-		imgui.SameLine(365)
-		imadd.ToggleButton('Test##2', test)
-		imgui.End()
-	end]]
+    if pris.mouse then
+        imgui.ShowCursor = not pris.astoverlay or grafeks.v or prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
+    else
+        imgui.ShowCursor = not pris.astoverlay and not grafeks.v and not prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
+    end
+
+
+    if prisonmenu.v then
+        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
+        imgui.Begin(u8'Настройки PrisonHelper', prisonmenu, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
+        imgui.Text(u8'Расписание в чате') ShowHelpMarker('Показывает график по расписанию в чате')
+        imgui.SameLine(365)
+        imadd.ToggleButton('raspchat##1', raspchat)
+        pris.fasttime = raspchat.v
+        imgui.Text(u8'Оверлей') ShowHelpMarker('Показывает график и время')
+        imgui.SameLine(365)
+        imadd.ToggleButton('Overlay##2', overllay)
+        pris.astoverlay = overllay.v
+        imgui.Text(u8'Мышка в /график и /prisonhelp') ShowHelpMarker('В /prisonhelp и /график будет\nактивироваться мышка')
+        imgui.SameLine(365)
+        imadd.ToggleButton('mish##3', mish)
+        pris.mouse = mish.v
+        imgui.Text(u8'Уведомления графика в /c 60') ShowHelpMarker('При вводе /c 60 будет выводиться график в чат')
+        imgui.SameLine(365)
+        imadd.ToggleButton('grafintime##4', grafintime)
+        pris.grafiktime = grafintime.v
+        imgui.Text(u8'Напоминание о PayDay') ShowHelpMarker('За 5 и за 1 минуту будет сообщение о PayDay')
+        imgui.SameLine(365)
+        imadd.ToggleButton('nappayday##5', nappayday)
+        pris.paydayhelp = nappayday.v
+        imgui.Text(u8'Быстрое меню (ПКМ + G)') ShowHelpMarker('Меню взаимодействия с игроком.')
+        imgui.SameLine(365)
+        imadd.ToggleButton('fastmennu##6', fastmennu)
+        pris.fastmenu = fastmennu.v
+        if imgui.Button(u8'Информация о скрипте', btn_size) then prisonmenu.v = false; prishelp.v = true end
+        if imgui.Button(u8'Автонастройка времени', btn_size) then prisontime = true; sampSendChat('/c 60') end
+        if imgui.Button(u8'Сохранить в INI файл', btn_size) then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
+        if imgui.Button(u8'Перезапустить скрипт', btn_size) then sampAddChatMessage(teg ..'Началась перезагрузка. Скрипт запустится через {FF7000}5 сек.', - 1) prisonmenu.v = false showCursor(false, false) thisScript():reload() end
+        imgui.Text('\n')
+        if imgui.CollapsingHeader(u8'Обновление. Текущая версия скрипта: '..thisScript().version) then
+            imgui.Text(u8'Автообновление скрипта') ShowHelpMarker('При запуске игры будет поиск обновлений скрипта')
+            imgui.SameLine(365)
+            imadd.ToggleButton('avtoobnova##6', avtoobnova)
+            pris.aupd = avtoobnova.v
+            if imgui.MenuItem(u8'Проверить версию') then apdeit() end
+            if imgui.MenuItem(u8'Принудительно обновить') then updates() end
+            if imgui.MenuItem(u8'Сохранить в INI') then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
+        end
+        imgui.End()
+    end
+
+
     if pris.astoverlay then
-        imgui.ShowCursor = false
+        --imgui.ShowCursor = false
         imgui.SetNextWindowPos(imgui.ImVec2(InfoX, InfoY), _, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
         imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
-        imgui.ShowCursor = false
+        --imgui.ShowCursor = false
         grafek = grafiktimesoverlay()
         imgui.Text(u8(grafek)) -- простой текст внутри этого окна
         imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
         imgui.End() -- конец окна
     end
+
+
     if pris.fastmenu then
         local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
-		imgui.ShowCursor = false
         if result then peds = ped; _, id = sampGetPlayerIdByCharHandle(peds); name = sampGetPlayerNickname(id) end
         if not sampIsDialogActive() and not sampIsChatInputActive() and not isGamePaused() and not isSampfuncsConsoleActive() and isKeyDown(0x02) and not fastmenus.v == true then fastmenus.v = isKeyJustPressed(VK_G) end
         if fastmenus.v then
-            imgui.ShowCursor = true
-            imgui.OpenPopup('PieMenu')
-            if pie.BeginPiePopup('PieMenu', 1) then
-                if pie.BeginPieMenu(u8'Обычные (Без команд)') then
-                    if pie.PieMenuItem(u8'Привет') then privet(id) end
-                    if pie.PieMenuItem(u8'Отмычка') then otm(id) end
-                    if pie.PieMenuItem(u8'Стол') then stol(id) end
-                    if pie.PieMenuItem(u8'Стол (Адвокат)') then stoladv(id) end
-                    pie.EndPieMenu()
-                end
-                if pie.BeginPieMenu(u8'Обычные (Команды)') then
-                    if pie.PieMenuItem('/cuff') then cuff(id) end
-                    if pie.PieMenuItem('/uncuff') then uncuff(id) end
-                    if pie.PieMenuItem('/hold') then sampProcessChatInput('/hold '..id) end
-                    if pie.PieMenuItem('/jd') then jd() end
-                    pie.EndPieMenu()
-                end
-                if pie.BeginPieMenu(u8'КПЗ') then
-                    if pie.PieMenuItem(u8'КПЗ') then kpz(id) end
-                    if pie.PieMenuItem(u8'КПЗ - врем') then kpzvrem(id) end
-                    if pie.PieMenuItem(u8'КПЗ - кон') then kpzvrem(id) end
-                    pie.EndPieMenu()
-                end
-                if pie.BeginPieMenu(u8'Быстрый репорт') then
-                    if pie.BeginPieMenu(u8'Быстрый репорт (Нон рп)') then
-                        if pie.PieMenuItem(u8'ДМ КПЗ') then SendReport(string.format('%s[%d] ДМит в КПЗ', name, id)) end
-                        if pie.PieMenuItem(u8'Сбивы анимаций') then SendReport(string.format('%s[%d] сбивает анимации в КПЗ', name, id)) end
-                        if pie.PieMenuItem(u8'АФК от /hold') then SendReport(string.format('%s[%d] AFK от /hold', name, id)) end
-                        if pie.PieMenuItem(u8'Нон РП анимации') then SendReport(string.format('%s[%d] НРП анимации в КПЗ', name, id)) end
-                        if pie.PieMenuItem(u8'Нон РП поведение') then SendReport(string.format('%s[%d] НРП поведение в КПЗ', name, id)) end
-                        pie.EndPieMenu()
-                    end
-                    if pie.BeginPieMenu(u8'Быстрый репорт (Чат)') then
-                        if pie.PieMenuItem(u8'Оскорбления / маты') then SendReport(string.format('%s[%d] оск + маты', name, id)) end
-                        if pie.PieMenuItem(u8'Флуд') then SendReport(string.format('%s[%d] flood в кпз', name, id)) end
-                        if pie.PieMenuItem(u8'НРП /me') then SendReport(string.format('%s[%d] НРП /me', name, id)) end
-                        pie.EndPieMenu()
-                    end
-                    if pie.PieMenuItem(u8'Своя причина') then SendReportDialog(id, name) end
-                    pie.EndPieMenu()
-                end
-                pie.EndPiePopup()
+            imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+            imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
+            imgui.Begin(u8(string.format('%s[%d] Преды: %d', name, id, checkwarn(name))), fastmenus, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
+            if imgui.CollapsingHeader(u8'Обычные (Без команд)') then
+                if imgui.MenuItem(u8'Привет') then privet(id) fastmenu.v = false end
+                if imgui.MenuItem(u8'Отмычка') then otm(id) fastmenu.v = false end
+                if imgui.MenuItem(u8'Стол') then stol(id) fastmenu.v = false end
+                if imgui.MenuItem(u8'Стол (Адвокат)') then stoladv(id) fastmenu.v = false end
             end
+            if imgui.CollapsingHeader(u8'Команды') then
+                if imgui.MenuItem('/cuff') then cuff(id) fastmenu.v = false end
+                if imgui.MenuItem('/uncuff') then uncuff(id) fastmenu.v = false end
+                if imgui.MenuItem('/hold') then sampProcessChatInput('/hold '..id) fastmenu.v = false end
+                if imgui.MenuItem('/jd') then jd() fastmenu.v = false end
+            end
+            if imgui.CollapsingHeader(u8'КПЗ') then
+                if imgui.MenuItem(u8'КПЗ') then kpz(id) fastmenu.v = false end
+                if imgui.MenuItem(u8'КПЗ - врем') then kpzvrem(id) fastmenu.v = false end
+                if imgui.MenuItem(u8'КПЗ - кон') then kpzvrem(id) fastmenu.v = false end
+            end
+            if imgui.CollapsingHeader(u8'Быстрый репорт (Нон рп)') then
+                if imgui.MenuItem(u8'ДМ КПЗ') then SendReport(string.format('%s[%d] ДМит в КПЗ', name, id)) fastmenu.v = false end
+                if imgui.MenuItem(u8'Сбивы анимаций') then SendReport(string.format('%s[%d] сбивает анимации в КПЗ', name, id)) fastmenu.v = false end
+                if imgui.MenuItem(u8'АФК от /hold') then SendReport(string.format('%s[%d] AFK от /hold', name, id)) fastmenu.v = false end
+                if imgui.MenuItem(u8'Нон РП анимации') then SendReport(string.format('%s[%d] НРП анимации', name, id)) fastmenu.v = false end
+                if imgui.MenuItem(u8'Нон РП поведение') then SendReport(string.format('%s[%d] НРП поведение', name, id)) fastmenu.v = false end
+            end
+            if imgui.CollapsingHeader(u8'Быстрый репорт (Чат)') then
+                if imgui.MenuItem(u8'Оскорбления / маты') then SendReport(string.format('%s[%d] оск + маты', name, id)) fastmenu.v = false end
+                if imgui.MenuItem(u8'Флуд') then SendReport(string.format('%s[%d] флуд', name, id)) fastmenu.v = false end
+                if imgui.MenuItem(u8'НРП /me') then SendReport(string.format('%s[%d] НРП /me', name, id)) fastmenu.v = false end
+            end
+            if imgui.CollapsingHeader(u8'Быстрый репорт (Своя причина)') then
+				imgui.Text(u8'Вводите только причину жалобы.')
+				imgui.Text(u8'Ник и ID будут автоматически отправлены.\n')
+				imgui.InputText(u8'Введите текст жалобы', jbsuka)
+				imgui.Text(name..'['..id..'] '..jbsuka.v)
+				if imgui.MenuItem(u8'Отправить жалобу (x2 Enter)') then SendReportDialog(id, name, u8:decode(jbsuka.v)) jbsuka.v = nil fastmenus.v = false end
+				if isKeyJustPressed(VK_RETURN) then SendReportDialog(id, name, u8:decode(jbsuka.v)) jbsuka.v = nil fastmenus.v = false end
+			end
+            imgui.End()
         end
     end
+
+
     if grafeks.v then
-        if pris.mouse then imgui.ShowCursor = true end
-        if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then grafeks.v = not grafeks.v end
+        if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then grafeks.v = false end
         imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(500, 500), imgui.Cond.FirstUseEver)
         imgui.Begin(u8'График тюрьмы', grafeks, imgui.WindowFlags.NoSavedSettings)
@@ -1022,45 +900,40 @@ function imgui.OnDrawFrame()
         imgui.End()
     end
     if prishelp.v then
-        imgui.ShowCursor = true
-        if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then grafeks.v = not grafeks.v end
+        if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then prishelp.v = false end
         imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(530, 450), imgui.Cond.FirstUseEver)
         imgui.Begin(u8'Помощь по PrisonHelper', prishelp, imgui.WindowFlags.NoSavedSettings)
         imgui.CenterTextColoredRGB(ph)
         imgui.End()
     end
+
+
     if imguilec.v then
-        imgui.ShowCursor = true
         imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
         imgui.SetNextWindowSize(imgui.ImVec2(500, 300), imgui.Cond.FirstUseEver)
         imgui.Begin(u8'[PrisonHelper] Лекции для заключённых', imguilec, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
         if imgui.CollapsingHeader(u8'1. Время') then
             if imgui.MenuItem(u8'Время начало', btn_size) then offsendchat = lua_thread.create(function() vremnach() end) imguilec.v = false end
             if imgui.MenuItem(u8'Время конец', btn_size) then offsendchat = lua_thread.create(function() vremkon() end) imguilec.v = false end
-            imgui.Text('\n')
         end
         if imgui.CollapsingHeader(u8'2. Уборка') then
             if imgui.MenuItem(u8'Уборка и завтрак начало', btn_size) then offsendchat = lua_thread.create(function() ubornach(0) end) imguilec.v = false end
             if imgui.MenuItem(u8'Уборка и завтрак конец', btn_size) then offsendchat = lua_thread.create(function() uborkon(0) end) imguilec.v = false end
             if imgui.MenuItem(u8'Уборка всей тюрьмы начало', btn_size) then offsendchat = lua_thread.create(function() ubornach(1) end) imguilec.v = false end
             if imgui.MenuItem(u8'Уборка всей тюрьмы конец', btn_size) then offsendchat = lua_thread.create(function() uborkon(1) end) imguilec.v = false end
-            imgui.Text('\n')
         end
         if imgui.CollapsingHeader(u8'3. Спортзал') then
             if imgui.MenuItem(u8'Спорзал начало', btn_size) then offsendchat = lua_thread.create(function() sportnach() end) imguilec.v = false end
             if imgui.MenuItem(u8'Спорзал конец', btn_size) then offsendchat = lua_thread.create(function() sportkon() end) imguilec.v = false end
-            imgui.Text('\n')
         end
         if imgui.CollapsingHeader(u8'4. Ужин') then
             if imgui.MenuItem(u8'Ужин начало', btn_size) then offsendchat = lua_thread.create(function() uzhinnach() end) imguilec.v = false end
             if imgui.MenuItem(u8'Ужин конец', btn_size) then offsendchat = lua_thread.create(function() uzhinkon() end) imguilec.v = false end
-            imgui.Text('\n')
         end
         if imgui.CollapsingHeader(u8'5. Обед') then
             if imgui.MenuItem(u8'Обед начало', btn_size) then offsendchat = lua_thread.create(function() obednach() end) imguilec.v = false end
             if imgui.MenuItem(u8'Обед конец', btn_size) then offsendchat = lua_thread.create(function() obedkon() end) imguilec.v = false end
-            imgui.Text('\n')
         end
         imgui.End()
     end
