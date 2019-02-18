@@ -454,7 +454,7 @@ function kpzkon(id)
             sampSendChat('/jaildoor')
             wait(1000)
             sampSendChat('Можете выходить из камеры, но больше не нарушайте.')
-			minuswarn(id)
+			minuswarn(sampGetPlayerNickname(id))
         end)
     else
         sampAddChatMessage('Введите {FF7000}/кпз-кон ID', 0x01A0E9)
@@ -851,6 +851,8 @@ function imgui.OnDrawFrame()
             imgui.Begin(u8(string.format('%s[%d] Преды: %d', name, id, checkwarn(name))), fastmenus, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
             if imgui.CollapsingHeader(u8'Обычные (Без команд)') then
                 if imgui.MenuItem(u8'Привет') then privet(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'Предупреждение') then warn(id) fastmenus.v = false end
+                --if imgui.MenuItem(u8'Снять предупреждение') then unwarn(id) fastmenus.v = false end
                 if imgui.MenuItem(u8'Отмычка') then otm(id) fastmenus.v = false end
                 if imgui.MenuItem(u8'Отмычка (Предупреждение)') then warnotm(id) fastmenus.v = false end
                 if imgui.MenuItem(u8'Стол') then stol(id) fastmenus.v = false end
@@ -884,7 +886,7 @@ function imgui.OnDrawFrame()
 				imgui.Text(u8'Ник и ID будут автоматически отправлены.\n')
 				imgui.InputText(u8'Введите текст жалобы', jbsuka)
 				imgui.Text(name..'['..id..'] '..jbsuka.v)
-				if imgui.MenuItem(u8'Отправить жалобу (x2 Enter)') then SendReportDialog(id, name, u8:decode(jbsuka.v)) jbsuka.v = nil fastmenus.v = false end
+				if imgui.MenuItem(u8'Отправить жалобу (x2 Enter)') then if #jbsuka.v >1 and jbsuka.v ~= '' and jbsuka.v ~= ' ' and jbsuka.v ~= '  ' then sampAddChatMessage(jbsuka.v, -1) else sampAddChatMessage(teg..'Вы ничего не ввели', -1) end end --SendReportDialog(id, name, u8:decode(jbsuka.v)) jbsuka.v = nil fastmenus.v = false end
 				if isKeyJustPressed(VK_RETURN) then SendReportDialog(id, name, u8:decode(jbsuka.v)) jbsuka.v = nil fastmenus.v = false end
 			end
             imgui.End()
