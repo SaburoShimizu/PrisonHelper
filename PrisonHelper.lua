@@ -37,7 +37,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4.8')
+script_version('1.4.9')
 script_properties("work-in-pause")
 
 
