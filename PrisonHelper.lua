@@ -161,7 +161,6 @@ function main()
     while not isSampAvailable() do wait(100) end
 	if sampGetCurrentServerName('SA-MP') then local start = false while start == false do wait(0) if sampGetCurrentServerName() ~= 'SA-MP' then start = true end end end
 	wait(5000)
-	if sampIsCursorActive() then showCursor(false, false) end
 	if sampGetCurrentServerName():find('Advance.+') or sampGetCurrentServerName():find('.+Advance.+') then print('Идёт загрузка скрипта.') else print('Скрипт не предназначен для данного сервера') print(sampGetCurrentServerName()) thisScript():unload() end
     if aupd == true then apdeit() end
     -- register commands
@@ -783,7 +782,7 @@ function imgui.OnDrawFrame()
             imadd.ToggleButton('avtoobnova##6', avtoobnova)
             pris.aupd = avtoobnova.v
             if imgui.MenuItem(u8'Проверить версию') then apdeit() end
-            if imgui.MenuItem(u8'Принудительно обновить') then updates() end
+            if imgui.MenuItem(u8'Принудительно обновить') then updates() showCursor(false, false) end
             if imgui.MenuItem(u8'Сохранить в INI') then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
         end
         imgui.End()
