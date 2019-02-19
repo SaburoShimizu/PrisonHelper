@@ -37,7 +37,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.4.9')
+script_version('1.5.0')
 script_properties("work-in-pause")
 
 
@@ -47,6 +47,7 @@ script_properties("work-in-pause")
 local btn_size = imgui.ImVec2(-0.1, 0)
 
 local offsendchat = nil
+local offfastmenuchat = nil
 local sw, sh = getScreenResolution()
 local rep = false
 local fftt = false
@@ -57,8 +58,8 @@ local aupd = nil
 local teg = '{FF7000}[PrisonHelper] {01A0E9}'
 local fcolor = '{01A0E9}'
 local stupd = false
---local kpzblyat = lua_thread.create_suspended(function() submenus_show(spisoc_lec, teg..'Лекции', 'Ok', 'Ne ok!', 'Nozad') end)
---local fastmenuthread = lua_thread.create_suspended(function() fastmenufunc() end)
+local prisonpedid = nil
+local prisonpedname = nil
 local paydayinformer = lua_thread.create_suspended(function() pdinf() end)
 
 
@@ -97,6 +98,8 @@ imguilec = imgui.ImBool(false)
 fastmenus = imgui.ImBool(false)
 prisonmenu = imgui.ImBool(false)
 jbsuka = imgui.ImBuffer(256)
+
+
 
 local raspchat = imgui.ImBool(fasttime)
 local overllay = imgui.ImBool(pris.astoverlay)
@@ -144,22 +147,10 @@ ph = [[{FF7000}/jd{d5dedd} - открыть/закрыть камеру (jaildoo
 {FF7000}/cam{d5dedd} - РП просмотр камер
 {FF7000}/prisonsettime{d5dedd} - Настройка времени скрипта
 {FF7000}/уведомления{d5dedd} - Отключить/включить уведомления о графике (сохраняется в ini файле)
-{FF7000}/привет{d5dedd} - Спросить что нужно заключённому
-{FF7000}/куф{d5dedd} - Нацепить на заключённого наручники через решётку
-{FF7000}/ункуф{d5dedd} - Снять наручники с заключённого через решётку
-{FF7000}/кпз{d5dedd} - Сказать заключённому о камере
-{FF7000}/кпз-врем{d5dedd} - Сказать заключённому о камере (2 минуты)
-{FF7000}/варн{d5dedd} - Предупреждение о камере
-{FF7000}/нарушение{d5dedd} - РП диалог + РП дубинка (неактив)
-{FF7000}/график{d5dedd} - расписание работы тюрьмы
-{FF7000}/решётка{d5dedd} - предупреждение о громыхании решёткой
-{FF7000}/отмычка{d5dedd} - РП сбой взлома камер
-{FF7000}/отмычка-варн{d5dedd} - РП сбой взлома камер и предупреждение о наручниках
-{FF7000}/стол{d5dedd} - Приказ заключённому слезть со стола
-{FF7000}/режим{d5dedd} - Лекции для заключённых
 {FF7000}/prisonoverlay{d5dedd} - Включить/выключить оверлей (без сохранения в INI)
 {FF7000}/prisonoverlaypos{d5dedd} - Настройка позиции оверлея (Требуется перезапуск после ввода)
 {FF7000}/prisonmenu{d5dedd} - Настройки скрипта
+{01A0E9}Весь функционал скрипта находится в Быстром Меню (ПКМ + G)
 
 {FF0000}Закрыть окно: Backspace, Enter, ESC]]
 
@@ -184,16 +175,6 @@ function main()
     sampRegisterChatCommand("prisonver", apdeit)
     sampRegisterChatCommand("cam", cam)
     sampRegisterChatCommand("panel", panel)
-    sampRegisterChatCommand("варн", warn)
-    sampRegisterChatCommand("привет", privet)
-    sampRegisterChatCommand("решётка", reshotka)
-    sampRegisterChatCommand("куф", cuff)
-    sampRegisterChatCommand("ункуф", uncuff)
-    sampRegisterChatCommand("кпз", kpz)
-    sampRegisterChatCommand("кпз-врем", kpzvrem)
-    sampRegisterChatCommand("кпз-кон", kpzkon)
-    sampRegisterChatCommand("стол", stol)
-    sampRegisterChatCommand("отмычка", otm)
     sampRegisterChatCommand('prisonmenu', function() prisonmenu.v = not prisonmenu.v end)
     sampRegisterChatCommand("уведомления", function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end)
     sampRegisterChatCommand("prisonsetime", function() prisontime = true sampSendChat('/c 60') end)
@@ -205,20 +186,25 @@ function main()
 
     if pris.fasttime == true then lua_thread.create(napominalka) sampAddChatMessage(teg ..'Уведомления графика тюрьмы {00FF00}включены', - 1) end
     if pris.grafiktime == true then sampAddChatMessage(teg ..'Уведомления графика тюрьмы в /c 60 {00FF00}включены', - 1) end
-    --if fastmenu == true and fastmenuthread:status() == 'suspended' or fastmenuthread:status() == 'dead' then fastmenuthread:run() end
     if pris.paydayhelp == true and paydayinformer:status() == 'suspended' or paydayinformer:status() == 'dead' then paydayinformer:run() end
+
+if pris.fastmenu then
+    rkeys.registerHotKey({vkeys.VK_RBUTTON, vkeys.VK_G}, true, function ()
+        local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
+        if result then local res, id = sampGetPlayerIdByCharHandle(ped); if res then name = sampGetPlayerNickname(id) prisonpedid, prisonpedname = id, name; fastmenus.v = true end end
+    end)
+end
+
+rkeys.registerHotKey({vkeys.VK_MENU, vkeys.VK_OEM_5}, true, function()
+	if offsendchat ~= nil then offsendchat:terminate() sampAddChatMessage(teg ..'Зачитка лекции остановлена', - 1) offsendchat = nil end
+	if offfastmenuchat ~= nil then offfastmenuchat:terminate() sampAddChatMessage(teg ..'Работа биндера остановлена', - 1) offfastmenuchat = nil end
+end)
 
     while true do
         wait(0)
-
         local ini = inicfg.load(default, 'PrisonHelper.ini')
         pris = ini.prison
         fasttime = pris.fasttime
-
-		if offsendchat ~= nil then if isKeyDown(VK_MENU) and isKeyJustPressed(VK_OEM_5) then offsendchat:terminate() sampAddChatMessage(teg ..'Зачитка лекции остановлена', - 1) end end
-        --if fastmenuthread:status() == 'running' or fastmenuthread:status() == nil then if isKeyDown(VK_MENU) and isKeyJustPressed(VK_OEM_5) then fastmenuthread:terminate() if fastmenu == false then sampAddChatMessage(teg ..'Быстрое меню выключено', - 1) else if fastmenu == true then fastmenuthread:run() end end end end
-
-
         -- Загрузка времени
         local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
         local dt = os.date("*t", os.time(dt))
@@ -226,54 +212,48 @@ function main()
 end
 
 function warnotm(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('Так! Пытаемся взломать замок?')
-            wait(500)
-            sampSendChat('Я это заберу.')
-            wait(500)
-            sampSendChat('/me забрал у заключённого отмычку')
-            wait(500)
-            sampSendChat('/jaildoor')
-            wait(250)
-            sampSendChat('/jaildoor')
-            wait(1000)
-            sampSendChat('/do Отмычка в руке.')
-            wait(1000)
-            sampSendChat('/me убрал отмычку в карман')
-            wait(1000)
-            sampSendChat('/do Отмычка в кармане.')
-            wait(1000)
-            sampSendChat('Зключённый №' ..id ..', Вам вынесено камерное предупреждение за попытку взлома замка.')
-            wait(2000)
-            sampSendChat('При последующих попытках я буду вынужден надеть на Вас наручники.')
-			pluswarn(id)
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/отмычка-варн ID', 0x01A0E9)
-    end
+    sampSendChat('Так! Пытаемся взломать замок?')
+    wait(500)
+    sampSendChat('Я это заберу.')
+    wait(500)
+    sampSendChat('/me забрал у заключённого отмычку')
+    wait(500)
+    sampSendChat('/jaildoor')
+    wait(250)
+    sampSendChat('/jaildoor')
+    wait(1000)
+    sampSendChat('/do Отмычка в руке.')
+    wait(1000)
+    sampSendChat('/me убрал отмычку в карман')
+    wait(1000)
+    sampSendChat('/do Отмычка в кармане.')
+    wait(1000)
+    sampSendChat('Зключённый №' ..id ..', Вам вынесено камерное предупреждение за попытку взлома замка.')
+    wait(2000)
+    sampSendChat('При последующих попытках я буду вынужден надеть на Вас наручники.')
+    pluswarn(id)
+    --wait(100)
+    --sampSendChat('В данный момент у вас ' ..checkwarn(sampGetPlayerNickname(id)) ..' предупреждений')
 end
 
 function otm()
-    lua_thread.create(function()
-        sampSendChat('Так! Пытаемся взломать замок?')
-        wait(500)
-        sampSendChat('Я это заберу.')
-        wait(500)
-        sampSendChat('/me забрал у заключённого отмычку')
-        wait(500)
-        sampSendChat('/jaildoor')
-        wait(250)
-        sampSendChat('/jaildoor')
-        wait(1000)
-        sampSendChat('/do Отмычка в руке.')
-        wait(1000)
-        sampSendChat('/me убрал отмычку в карман пиджака')
-        wait(1000)
-        sampSendChat('/do Отмычка в кармане пиджака.')
-        wait(2000)
-        sampSendChat('/n /key в наручниках - Non RP.')
-    end)
+    sampSendChat('Так! Пытаемся взломать замок?')
+    wait(500)
+    sampSendChat('Я это заберу.')
+    wait(500)
+    sampSendChat('/me забрал у заключённого отмычку')
+    wait(500)
+    sampSendChat('/jaildoor')
+    wait(250)
+    sampSendChat('/jaildoor')
+    wait(1000)
+    sampSendChat('/do Отмычка в руке.')
+    wait(1000)
+    sampSendChat('/me убрал отмычку в карман')
+    wait(1000)
+    sampSendChat('/do Отмычка в кармане.')
+    wait(2000)
+    sampSendChat('/n /key в наручниках - Non RP.')
 end
 
 function jd()
@@ -299,104 +279,115 @@ function reloader()
     lua_thread.create(function()
         sampAddChatMessage('PrisonHelper {01A0E9}будет перезагружен через 1 секунду.', 0xFF7000)
         wait(1000)
+        showCursor(false, false)
         script.this:reload()
     end)
 end
 
 function reshotka(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('Заключённый №'..id ..'.')
-            wait(1000)
-            sampSendChat('Вам вынесено камерное предупреждение за то, что вы гремите решёткой камеры.')
-            wait(1000)
-            sampSendChat('При последующем выносе предупреждения я буду вынужден надеть на Вас наручники.')
-            wait(1000)
-            sampSendChat('/n По РП с наручниками за спиной ты не можешь бить по решётке. Если замечу - залью ЖБ за NonRP.')
-			pluswarn(id)
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/решётка ID', 0x01A0E9)
-    end
+    sampSendChat('Заключённый №'..id ..'.')
+    wait(1000)
+    sampSendChat('Вам вынесено камерное предупреждение за то, что вы гремите решёткой камеры.')
+    wait(1000)
+    sampSendChat('При последующем выносе предупреждения я буду вынужден надеть на Вас наручники.')
+    wait(1000)
+    sampSendChat('/n По РП с наручниками за спиной ты не можешь бить по решётке. Если замечу - залью ЖБ за NonRP.')
+    pluswarn(id)
+    --wait(1000)
+    --sampSendChat('В данный момент у вас ' ..checkwarn(sampGetPlayerNickname(id)) ..' предупреждений')
 end
 
 function uncuff(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('/do Наручники на человеке.')
-            wait(1000)
-            sampSendChat('/me просунул руку через решётку')
-            wait(1000)
-            sampSendChat('/me расстегнул наручники')
-            wait(1000)
-            sampSendChat('/uncuff ' ..id)
-            wait(1000)
-            sampSendChat('/me высунул руки из решётки')
-            wait(1000)
-            sampSendChat('/me повесил наручники на пояс')
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/ункуф ID', 0x01A0E9)
-    end
+    sampSendChat('/do Наручники на человеке.')
+    wait(1000)
+    sampSendChat('/me просунул руку через решётку')
+    wait(1000)
+    sampSendChat('/me расстегнул наручники')
+    wait(1000)
+    sampSendChat('/uncuff ' ..id)
+    wait(1000)
+    sampSendChat('/me высунул руки из решётки')
+    wait(1000)
+    sampSendChat('/me повесил наручники на пояс')
 end
 
 function cuff(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('/do На поясном держателе висят наручники.')
-            wait(1000)
-            sampSendChat('/me снял наручники с поясного держателя')
-            wait(1000)
-            sampSendChat('/me просунул руки через решётку')
-            wait(1000)
-            sampSendChat('/me надел наручники на руки преступника и застегнул их')
-            wait(1000)
-            sampSendChat('/cuff ' ..id)
-            wait(1000)
-            sampSendChat('/me высунул руки из решётки')
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/куф ID', 0x01A0E9)
-    end
+    sampSendChat('/do На поясном держателе висят наручники.')
+    wait(1000)
+    sampSendChat('/me снял наручники с поясного держателя')
+    wait(1000)
+    sampSendChat('/me просунул руки через решётку')
+    wait(1000)
+    sampSendChat('/me надел наручники на руки преступника и застегнул их')
+    wait(1000)
+    sampSendChat('/cuff ' ..id)
+    wait(1000)
+    sampSendChat('/me высунул руки из решётки')
 end
 
 function warn(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('Здравствуйте, заключённый №' ..id..'.')
-            wait(1000)
-            sampSendChat('Вам вынесено предупреждение за нарушение внутреннего порядка.')
-            wait(1000)
-            sampSendChat('При повтороном нарушении я буду вынужден посадить Вас в одиночную камеру.')
-			pluswarn(id)
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/варн ID', 0x01A0E9)
-    end
+    sampSendChat('Здравствуйте, заключённый №' ..id..'.')
+    wait(1000 )
+    sampSendChat('Вам вынесено предупреждение за нарушение внутреннего порядка.')
+    wait(1000)
+    sampSendChat('/me достав КПК из кармана штанов, ввёл логин и пароль в базе данных')
+    wait(1000)
+    sampSendChat('/me зашёл в раздел "предупреждения заключённых"')
+    wait(1000)
+    sampSendChat('/me ввёл номер заключённого, стоящего напротив, затем выдал предупреждение')
+    wait(1000)
+    sampSendChat('/do Предупреждение выдано.')
+    wait(1000)
+    sampSendChat('/me убрал КПК в карман')
+    pluswarn(id)
+    --wait(1000)
+    --sampSendChat('В данный момент у вас ' ..checkwarn(sampGetPlayerNickname(id)) ..' предупреждений')
+end
+
+function unwarn(id)
+    sampSendChat('Заключённый №'..id..', я снимаю с Вас последнее выданное предупреждение.')
+    wait(1000)
+    sampSendChat('Но это не значит, что я не выдам его снова, если Вы будете нарушать режим.')
+    wait(1000)
+    sampSendChat('/me достав КПК из кармана штанов, ввёл логин и пароль в базе данных')
+    wait(1000)
+    sampSendChat('/me зашёл в раздел "предупреждения заключённых"')
+    wait(1000)
+    sampSendChat('/me ввёл номер заключённого, стоящего напротив, затем удалил предупреждение')
+    wait(1000)
+    sampSendChat('/do Предупреждение удалено.')
+    wait(1000)
+    sampSendChat('/me убрал КПК в карман')
+    minuswarn(id, sampGetPlayerNickname(id))
+end
+
+function unwarnall(id)
+    sampSendChat('Заключённый №'..id..', я снимаю с Вас последние выданные предупреждения.')
+    wait(1000 )
+    sampSendChat('Но это не значит, что я не выдам его снова, если Вы будете нарушать режим.')
+    wait(1000 )
+    sampSendChat('/me достав КПК из кармана штанов, ввёл логин и пароль в базе данных')
+    wait(1000 )
+    sampSendChat('/me зашёл в раздел "предупреждения заключённых"')
+    wait(1000 )
+    sampSendChat('/me ввёл номер заключённого, стоящего напротив, затем удалил предупреждения')
+    wait(1000 )
+    sampSendChat('/do Предупреждения удалены.')
+    wait(1000 )
+    sampSendChat('/me убрал КПК в карман')
+    minusallwarn(id, sampGetPlayerNickname(id))
 end
 
 function privet(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('Здравствуйте, заключённый №' ..id..'.')
-            wait(2000)
-            sampSendChat('Чем я могу Вам помочь?')
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/привет ID', 0x01A0E9)
-    end
+    sampSendChat('Здравствуйте, заключённый №' ..id..'.')
+    wait(2000)
+    sampSendChat('Чем я могу Вам помочь?')
 end
 
 function stol(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('Заключённый №' ..id ..', немедленно слезьте со стола!')
-            wait(1000)
-            sampSendChat('В противном случае я буду вынужден применить резиновую дубинку или резиновые пули!')
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/стол ID', 0x01A0E9)
-    end
+    sampSendChat('Заключённый №' ..id ..', немедленно слезьте со стола!')
+    wait(1000)
+    sampSendChat('В противном случае я буду вынужден применить резиновую дубинку или резиновые пули!')
 end
 
 function stoladv()
@@ -406,59 +397,41 @@ function stoladv()
 end
 
 function kpz(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('Заключённый №' ..id ..', Вы посажены в одиночную камеру без шанса на выход.')
-            wait(1000)
-            sampSendChat('Если же Вы попытаетесь взломать замок, я надену на Вас наручники.')
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/кпз ID', 0x01A0E9)
-    end
+    sampSendChat('Заключённый №' ..id ..', Вы посажены в одиночную камеру без шанса на выход.')
+    wait(1000)
+    sampSendChat('Если же Вы попытаетесь взломать замок, я надену на Вас наручники.')
 end
 
 function kpzvrem(id)
-  if id ~= '' then
-    lua_thread.create(function()
-      sampSendChat('Заключённый №' ..id ..', Вы посажены в одиночную камеру на две минуты.')
-      wait(1000)
-      sampSendChat('Если же Вы попытаетесь взломать замок - я продлю время вашего нахождения в камере.')
-      wait(1000)
-      sampSendChat('Или же надену на Вас наручники, если и это не поможет.')
-      wait(1000)
-      sampSendChat('/do Наручники на человеке.')
-      wait(1000)
-      sampSendChat('/me просунул руку через решётку')
-      wait(1000)
-      sampSendChat('/me расстегнул наручники')
-      wait(1000)
-      sampSendChat('/uncuff ' ..id)
-      wait(1000)
-      sampSendChat('/me высунул руки из решётки')
-      wait(1000)
-      sampSendChat('/me повесил наручники на пояс')
-    end)
-  else
-    sampAddChatMessage('Введите {FF7000}/кпз-врем ID', 0x01A0E9)
-  end
+    sampSendChat('Заключённый №' ..id ..', Вы посажены в одиночную камеру на две минуты.')
+    wait(1000)
+    sampSendChat('Если же Вы попытаетесь взломать замок - я продлю время вашего нахождения в камере.')
+    wait(1000)
+    sampSendChat('Или же надену на Вас наручники, если и это не поможет.')
+    wait(1000)
+    sampSendChat('/do Наручники на человеке.')
+    wait(1000)
+    sampSendChat('/me просунул руку через решётку')
+    wait(1000)
+    sampSendChat('/me расстегнул наручники')
+    wait(1000)
+    sampSendChat('/uncuff ' ..id)
+    wait(1000)
+    sampSendChat('/me высунул руки из решётки')
+    wait(1000)
+    sampSendChat('/me повесил наручники на пояс')
 end
 
 function kpzkon(id)
-    if id ~= '' then
-        lua_thread.create(function()
-            sampSendChat('Заключённый №' ..id ..', время Вашего нахождения в одиночной камере подошло к концу.')
-            wait(1000)
-            sampSendChat('/me протянулся к поясному держателю, затем достал ключ от камеры')
-            wait(250)
-            sampSendChat('/me открыл/закрыл камеру, затем повесил ключ назад')
-            sampSendChat('/jaildoor')
-            wait(1000)
-            sampSendChat('Можете выходить из камеры, но больше не нарушайте.')
-			minuswarn(sampGetPlayerNickname(id))
-        end)
-    else
-        sampAddChatMessage('Введите {FF7000}/кпз-кон ID', 0x01A0E9)
-    end
+    sampSendChat('Заключённый №' ..id ..', время Вашего нахождения в одиночной камере подошло к концу.')
+    wait(1000)
+    sampSendChat('/me протянулся к поясному держателю, затем достал ключ от камеры')
+    wait(250)
+    sampSendChat('/me открыл/закрыл камеру, затем повесил ключ назад')
+    sampSendChat('/jaildoor')
+    wait(1000)
+    sampSendChat('Можете выходить из камеры, но больше не нарушайте.')
+    minuswarn(id, sampGetPlayerNickname(id))
 end
 
 function vremnach()
@@ -699,26 +672,6 @@ end
 
 
 
-function fastmenufunc()
-    sampAddChatMessage(teg ..'Быстрое меню {00FF00}включено', - 1)
-    while true do wait(0)
-        local rese, ped = getCharPlayerIsTargeting(playerHandle)
-        if rese then
-            if isKeyJustPressed(VK_G) then
-                local _, pedid = sampGetPlayerIdByCharHandle(ped)
-                local name = sampGetPlayerNickname(pedid)
-				wk = checkwarn(name)
-				sampAddChatMessage(teg..'Предупреждения игрока '..name..': {FF7000}'..wk, -1)
-                checkfunctionsmenu(pedid, name)
-                submenus_show(functionsmenu, string.format('%s %s[%d]', teg, name, pedid), 'Выбрать', 'Отменить', 'Назад')
-            end
-        end
-    end
-end
-
-
-
-
 function checkwarn(name)
 	if varns[name] ~= nil then return varns[name] else return 0 end
 end
@@ -737,11 +690,19 @@ function pluswarn(id)
 	local name = sampGetPlayerNickname(id)
 	if varns[name] ~= nil then varns[name] = varns[name] + 1 else varns[name] = 1 end
 	checkwarn(name)
-	notf.addNotification(string.format('Выдано предупреждение зеку\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
+	notf.addNotification(string.format('Выдано предупреждение заключённому\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
 end
 
-function minuswarn(name)
+function minuswarn(id, name)
 	if varns[name] ~= nil and varns[name] > 0 then varns[name] = varns[name] - 1 else varns[name] = nil end
+	checkwarn(name)
+	notf.addNotification(string.format('Снято предупреждение заключённого\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
+end
+
+function minusallwarn(id, name)
+	if varns[name] ~= nil and varns[name] > 0 then varns[name] = 0 else varns[name] = nil end
+	checkwarn(name)
+	notf.addNotification(string.format('Сняты все предупреждения\nзаключённого\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
 end
 
 varns = {}
@@ -842,32 +803,32 @@ function imgui.OnDrawFrame()
 
 
     if pris.fastmenu then
-        local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
-        if result then peds = ped; _, id = sampGetPlayerIdByCharHandle(peds); name = sampGetPlayerNickname(id) end
-        if not sampIsDialogActive() and not sampIsChatInputActive() and not isGamePaused() and not isSampfuncsConsoleActive() and isKeyDown(0x02) and not fastmenus.v == true then fastmenus.v = isKeyJustPressed(VK_G) end
         if fastmenus.v then
+			local id, name = prisonpedid, prisonpedname
             imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
             imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
             imgui.Begin(u8(string.format('%s[%d] Преды: %d', name, id, checkwarn(name))), fastmenus, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
             if imgui.CollapsingHeader(u8'Обычные (Без команд)') then
-                if imgui.MenuItem(u8'Привет') then privet(id) fastmenus.v = false end
-                if imgui.MenuItem(u8'Предупреждение') then warn(id) fastmenus.v = false end
-                --if imgui.MenuItem(u8'Снять предупреждение') then unwarn(id) fastmenus.v = false end
-                if imgui.MenuItem(u8'Отмычка') then otm(id) fastmenus.v = false end
-                if imgui.MenuItem(u8'Отмычка (Предупреждение)') then warnotm(id) fastmenus.v = false end
-                if imgui.MenuItem(u8'Стол') then stol(id) fastmenus.v = false end
-                if imgui.MenuItem(u8'Стол (Адвокат)') then stoladv(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'Привет') then offfastmenuchat = lua_thread.create(function() privet(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Предупреждение') then offfastmenuchat = lua_thread.create(function() warn(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Снять предупреждение') then offfastmenuchat = lua_thread.create(function() unwarn(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Снять все предупреждения') then offfastmenuchat = lua_thread.create(function() unwarnall(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Отмычка') then offfastmenuchat = lua_thread.create(function() otm(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Отмычка (Предупреждение)') then offfastmenuchat = lua_thread.create(function() warnotm(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Решётка (Предупреждение)') then offfastmenuchat = lua_thread.create(function() reshotka(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Стол') then offfastmenuchat = lua_thread.create(function() stol(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Стол (Адвокат)') then offfastmenuchat = lua_thread.create(function() stoladv(id) end) fastmenus.v = false end
             end
             if imgui.CollapsingHeader(u8'Команды') then
-                if imgui.MenuItem('/cuff') then cuff(id) fastmenus.v = false end
-                if imgui.MenuItem('/uncuff') then uncuff(id) fastmenus.v = false end
+                if imgui.MenuItem('/cuff') then offfastmenuchat = lua_thread.create(function() cuff(id) end) fastmenus.v = false end
+                if imgui.MenuItem('/uncuff') then offfastmenuchat = lua_thread.create(function() uncuff(id) end) fastmenus.v = false end
                 if imgui.MenuItem('/hold') then sampProcessChatInput('/hold '..id) fastmenus.v = false end
-                if imgui.MenuItem('/jd') then jd() fastmenus.v = false end
+                if imgui.MenuItem('/jd') then offfastmenuchat = lua_thread.create(function() jd() end) fastmenus.v = false end
             end
             if imgui.CollapsingHeader(u8'КПЗ') then
-                if imgui.MenuItem(u8'КПЗ') then kpz(id) fastmenus.v = false end
-                if imgui.MenuItem(u8'КПЗ - врем') then kpzvrem(id) fastmenus.v = false end
-                if imgui.MenuItem(u8'КПЗ - кон') then kpzvrem(id) fastmenus.v = false end
+                if imgui.MenuItem(u8'КПЗ') then offfastmenuchat = lua_thread.create(function() kpz(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'КПЗ - врем') then offfastmenuchat = lua_thread.create(function() kpzvrem(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'КПЗ - кон') then offfastmenuchat = lua_thread.create(function() kpzvrem(id) end) fastmenus.v = false end
             end
             if imgui.CollapsingHeader(u8'Быстрый репорт (Нон рп)') then
                 if imgui.MenuItem(u8'ДМ КПЗ') then SendReport(string.format('%s[%d] ДМит в КПЗ', name, id)) fastmenus.v = false end
