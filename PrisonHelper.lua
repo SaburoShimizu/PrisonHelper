@@ -815,7 +815,7 @@ function imgui.OnDrawFrame()
                 if imgui.MenuItem(u8'Снять все предупреждения') then offfastmenuchat = lua_thread.create(function() unwarnall(id) end) fastmenus.v = false end
                 if imgui.MenuItem(u8'Отмычка') then offfastmenuchat = lua_thread.create(function() otm(id) end) fastmenus.v = false end
                 if imgui.MenuItem(u8'Отмычка (Предупреждение)') then offfastmenuchat = lua_thread.create(function() warnotm(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Решётка (Предупреждение)') then offfastmenuchat = lua_thread.create(function() reshotka(id) end) fastmenus.v = false end
+                if imgui.MenuItem(u8'Решётка') then offfastmenuchat = lua_thread.create(function() reshotka(id) end) fastmenus.v = false end
                 if imgui.MenuItem(u8'Стол') then offfastmenuchat = lua_thread.create(function() stol(id) end) fastmenus.v = false end
                 if imgui.MenuItem(u8'Стол (Адвокат)') then offfastmenuchat = lua_thread.create(function() stoladv(id) end) fastmenus.v = false end
             end
