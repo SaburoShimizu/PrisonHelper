@@ -782,7 +782,7 @@ function imgui.OnDrawFrame()
             imadd.ToggleButton('avtoobnova##6', avtoobnova)
             pris.aupd = avtoobnova.v
             if imgui.MenuItem(u8'Проверить версию') then apdeit() end
-            if imgui.MenuItem(u8'Принудительно обновить') then updates() showCursor(false, false) end
+            if imgui.MenuItem(u8'Принудительно обновить') then updates() showCursor(false, false) prisonmenu.v = false end
             if imgui.MenuItem(u8'Сохранить в INI') then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
         end
         imgui.End()
