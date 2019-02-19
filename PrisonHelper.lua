@@ -161,7 +161,6 @@ function main()
     while not isSampAvailable() do wait(100) end
 	if sampGetCurrentServerName('SA-MP') then local start = false while start == false do wait(0) if sampGetCurrentServerName() ~= 'SA-MP' then start = true end end end
 	wait(5000)
-	showCursor(false, false)
 	if sampGetCurrentServerName():find('Advance.+') or sampGetCurrentServerName():find('.+Advance.+') then print('Идёт загрузка скрипта.') else print('Скрипт не предназначен для данного сервера') print(sampGetCurrentServerName()) thisScript():unload() end
     if aupd == true then apdeit() end
     -- register commands
@@ -200,6 +199,7 @@ rkeys.registerHotKey({vkeys.VK_MENU, vkeys.VK_OEM_5}, true, function()
 	if offsendchat ~= nil then offsendchat:terminate() sampAddChatMessage(teg ..'Зачитка лекции остановлена', - 1) offsendchat = nil end
 	if offfastmenuchat ~= nil then offfastmenuchat:terminate() sampAddChatMessage(teg ..'Работа биндера остановлена', - 1) offfastmenuchat = nil end
 end)
+
 
     while true do
         wait(0)
@@ -659,7 +659,6 @@ function updates()
                 f:write(u8:decode(respe.text))
                 f:close()
                 sampAddChatMessage(teg ..'Обновление успешно скачалось. Скрипт перезапуститься автоматически', - 1)
-				showCursor(false, false)
                 thisScript():reload()
             else
                 sampAddChatMessage(teg ..'Ошибка обновления. Попробуйте позже', - 3)
@@ -784,7 +783,7 @@ function imgui.OnDrawFrame()
             imadd.ToggleButton('avtoobnova##6', avtoobnova)
             pris.aupd = avtoobnova.v
             if imgui.MenuItem(u8'Проверить версию') then apdeit() end
-            if imgui.MenuItem(u8'Принудительно обновить') then updates() prisonmenu.v = false end
+            if imgui.MenuItem(u8'Принудительно обновить') then updates() end
             if imgui.MenuItem(u8'Сохранить в INI') then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
         end
         imgui.End()
