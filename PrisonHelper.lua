@@ -737,12 +737,19 @@ end
 
 
 function imgui.OnDrawFrame()
-    if pris.mouse then
-        imgui.ShowCursor = not pris.astoverlay or grafeks.v or prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
+    if pris.astoverlay then
+        if pris.mouse then
+            imgui.ShowCursor = not pris.astoverlay or grafeks.v or prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
+        else
+            imgui.ShowCursor = not pris.astoverlay and not grafeks.v and not prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
+        end
     else
-        imgui.ShowCursor = not pris.astoverlay and not grafeks.v and not prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
+        if pris.mouse then
+            imgui.ShowCursor = pris.astoverlay or grafeks.v or prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
+        else
+            imgui.ShowCursor = pris.astoverlay and not grafeks.v and not prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
+        end
     end
-
 
     if prisonmenu.v then
         imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
