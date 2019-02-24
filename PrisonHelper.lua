@@ -37,7 +37,7 @@ u8 = encoding.UTF8
 
 
 script_author('Saburo Shimizu')
-script_version('1.5.0')
+script_version('1.5.1')
 script_properties("work-in-pause")
 
 
@@ -779,16 +779,22 @@ function imgui.OnDrawFrame()
         imgui.SameLine(365)
         imadd.ToggleButton('fastmennu##6', fastmennu)
         pris.fastmenu = fastmennu.v
+		imgui.Spacing()
+		imgui.Separator()
+		imgui.Spacing()
         if imgui.Button(u8'Информация о скрипте', btn_size) then prisonmenu.v = false; prishelp.v = true end
         if imgui.Button(u8'Автонастройка времени', btn_size) then prisontime = true; sampSendChat('/c 60') end
         if imgui.Button(u8'Сохранить в INI файл', btn_size) then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
         if imgui.Button(u8'Перезапустить скрипт', btn_size) then sampAddChatMessage(teg ..'Началась перезагрузка. Скрипт запустится через {FF7000}5 сек.', - 1) prisonmenu.v = false showCursor(false, false) thisScript():reload() end
-        imgui.Text('\n')
+        imgui.Spacing()
+		imgui.Separator()
+		imgui.Spacing()
         if imgui.CollapsingHeader(u8'Обновление. Текущая версия скрипта: '..thisScript().version) then
             imgui.Text(u8'Автообновление скрипта') ShowHelpMarker('При запуске игры будет поиск обновлений скрипта')
             imgui.SameLine(365)
             imadd.ToggleButton('avtoobnova##6', avtoobnova)
             pris.aupd = avtoobnova.v
+			imgui.Separator()
             if imgui.MenuItem(u8'Проверить версию') then apdeit() end
             if imgui.MenuItem(u8'Принудительно обновить') then updates() end
             if imgui.MenuItem(u8'Сохранить в INI') then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
@@ -804,6 +810,8 @@ function imgui.OnDrawFrame()
         imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
         --imgui.ShowCursor = false
         grafek = grafiktimesoverlay()
+		imgui.CenterTextColoredRGB('{01A0E9}PrisonHelper')
+		imgui.Separator()
         imgui.Text(u8(grafek)) -- простой текст внутри этого окна
         imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
         imgui.End() -- конец окна
