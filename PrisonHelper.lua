@@ -36,611 +36,266 @@ encoding.default = 'CP1251'
 u8 = encoding.UTF8
 
 
+script_name('Way_Of_Life_Helper')
+script_version('2.0.2')
 script_author('Saburo Shimizu')
-script_version('1.5.1')
-script_properties("work-in-pause")
 
 
 
---test = imgui.ImBool(true)
-
-local btn_size = imgui.ImVec2(-0.1, 0)
-
-local offsendchat = nil
-local offfastmenuchat = nil
-local sw, sh = getScreenResolution()
-local rep = false
-local fftt = false
-local prisontime = false
-local URL = nil
-local systime = 0
-local aupd = nil
-local teg = '{FF7000}[PrisonHelper] {01A0E9}'
-local fcolor = '{01A0E9}'
-local stupd = false
-local prisonpedid = nil
-local prisonpedname = nil
-local paydayinformer = lua_thread.create_suspended(function() pdinf() end)
-
-
-default = {
-    prison = {
-        hour = 0,
-        fasttime = true,
-        aupd = true,
-        fastmenu = false,
-        paydayhelp = false,
-        grafiktime = false,
-        astoverlay = false,
-		Xovers = 500,
-		Yovers = 500,
-		mouse = true
-    }
+picups = {
+	['Clotch'] = 58, -- Пикап магазина одежды
+    avtosalon = {
+		[1] = 92, -- Пикап магазина одежды
+		[2] = 91, -- Пикап магазина одежды
+        [3] = 90, -- Пикап магазина одежды
+    },
 }
 
-local ini = inicfg.load(default, 'PrisonHelper.ini')
+getgunses = {
+  [1] = 100, -- LSPD
+  [2] = 99, -- FBI
+  [3] = 28, -- SWAT
+  [4] = 37, -- ВВС
+  [5] = 57, -- Army LV
+  [6] = 56, -- Army SF
+  [7] = 218, -- Meria
+  [8] = 225 -- Pra-vo
+}
 
-pris = ini.prison
-fasttime = pris.fasttime
-hour = pris.hour
-aupd = pris.aupd
-grafiktime = pris.grafiktime
-fastmenu = pris.fastmenu
-InfoX = pris.Xovers
-InfoY = pris.Yovers
 
 
+
+
+dhelp = [[{FF7000}/wolgun - {d5dedd}Взять оружие с любого места
+{FF7000}/getjob - {d5dedd}Взять пикап с трудоустройством с любого места
+{FF7000}/swatgun - {d5dedd}Автоматически взять оружие
+{FF7000}/getstat - {d5dedd}Принудительная проверка статистики
+{FF7000}/wolhelp - {d5dedd}Помощь по скрипту
+{FF7000}/wolreload - {d5dedd}Перезагрузка скрипта
+{FF7000}/wolmenu - {d5dedd}Меню скрипта
+{FF7000}/woltp - {d5dedd}Меню с телепортами
+{FF7000}/tpfind - {d5dedd}Телепорт к игроку
+
+
+{FF0000} Дополнительные настройки в INI файле]]
+
+
+-- INI FILES
+
+local inicfg = require 'inicfg'
+
+
+-- INI FILES
+
+local default = {
+  WOL = {
+    org = true;
+    autogun = true;
+    mvd = true;
+    gun = 140;
+    aupd = true;
+    wolpass = 0;
+    wolalogin = false;
+  }
+}
+
+local restore = {
+  WOL = {
+    org = true;
+    autogun = true;
+    mvd = true;
+    gun = 140;
+    aupd = true;
+    wolpass = 0;
+    wolalogin = false;
+  }
+}
+
+local ini = inicfg.load(default, 'Way_Of_Life_Helper.ini')
+
+wol = ini.WOL
+
+
+local tpfindresult = false
+local teg = '{FF0000}[WolHelper] {FFFFFF}'
+local sw, sh = getScreenResolution()
+local orgs = nil
+local getstat = false
+local swatgun = false
+local naambs = 0
 
 imgui.Process = false
-grafeks = imgui.ImBool(false)
-prishelp = imgui.ImBool(false)
-imguilec = imgui.ImBool(false)
-fastmenus = imgui.ImBool(false)
-prisonmenu = imgui.ImBool(false)
-jbsuka = imgui.ImBuffer(256)
+local btn_size = imgui.ImVec2(-0.1, 0)
+local scriptmenu = imgui.ImBool(false)
+local imguifaq = imgui.ImBool(false)
+local tporg = imgui.ImBool(false)
+local picupsimgui = imgui.ImBool(false)
+
+local imguiautogun = imgui.ImBool(wol.autogun)
+local imguimvd = imgui.ImBool(wol.mvd)
+local imguiaupd = imgui.ImBool(wol.aupd)
+local imguiaulog = imgui.ImBool(wol.wolalogin)
+local imguiautoinv = imgui.ImBool(wol.org)
+local imguipass = imgui.ImBuffer(256)
+imguipass.v = wol.wolpass
 
 
 
-local raspchat = imgui.ImBool(fasttime)
-local overllay = imgui.ImBool(pris.astoverlay)
-local mish = imgui.ImBool(pris.mouse)
-local grafintime = imgui.ImBool(pris.grafiktime)
-local nappayday = imgui.ImBool(pris.paydayhelp)
-local fastmennu = imgui.ImBool(pris.fastmenu)
-local avtoobnova = imgui.ImBool(pris.aupd)
-
-
-
-rasp = [[		{FF0000}Понедельник - Пятница
-
-{FF7000}07:00 - 09:00 - {d5dedd}Подъем, завтрак и уборка камер
-{FF7000}09:00 - 10:00 - {d5dedd}Свободное время
-{FF7000}10:00 - 12:00 - {d5dedd}Готовка еды и уборка двора
-{FF7000}12:00 - 13:00 - {d5dedd}Обед
-{FF7000}13:00 - 14:00 - {d5dedd}Свободное время
-{FF7000}14:00 - 16:00 - {d5dedd}Готовка еды и уборка двора
-{FF7000}16:00 - 17:00 - {d5dedd}Тренировка в зале
-{FF7000}17:00 - 18:00 - {d5dedd}Ужин
-{FF7000}18:00 - 19:00 - {d5dedd}Свободное время
-{FF7000}19:00 - 20:00 - {d5dedd}Уборка всей тюрьмы
-{FF7000}20:00 - 07:00 - {d5dedd}Отбой
-
-		{FF0000}Суббота - Воскресенье
-
-{FF7000}07:00 - 09:00 {d5dedd}- Подъем, завтрак и уборка камер
-{FF7000}09:00 - 10:00 {d5dedd}- Свободное время
-{FF7000}10:00 - 13:00 {d5dedd}- Готовка еды и уборка двора
-{FF7000}13:00 - 14:00 {d5dedd}- Обед
-{FF7000}14:00 - 15:00 {d5dedd}- Свободное время
-{FF7000}15:00 - 17:00 {d5dedd}- Готовка еды и уборка двора
-{FF7000}17:00 - 19:00 {d5dedd}- Тренировка в зале
-{FF7000}19:00 - 20:00 {d5dedd}- Ужин
-{FF7000}20:00 - 21:00 {d5dedd}- Свободное время
-{FF7000}21:00 - 22:00 {d5dedd}- Уборка всей тюрьмы
-{FF7000}22:00 - 07:00 {d5dedd}- Отбой
-
-{FF0000}Закрыть окно: Backspace, Enter, ESC]]
-
-ph = [[{FF7000}/jd{d5dedd} - открыть/закрыть камеру (jaildoor)
-{FF7000}/panel{d5dedd} - РП открыть панель управления камерамаи/двором
-{FF7000}/prisonreload{d5dedd} - Перезагружает скрипт
-{FF7000}/cam{d5dedd} - РП просмотр камер
-{FF7000}/prisonsettime{d5dedd} - Настройка времени скрипта
-{FF7000}/уведомления{d5dedd} - Отключить/включить уведомления о графике (сохраняется в ini файле)
-{FF7000}/prisonoverlay{d5dedd} - Включить/выключить оверлей (без сохранения в INI)
-{FF7000}/prisonoverlaypos{d5dedd} - Настройка позиции оверлея (Требуется перезапуск после ввода)
-{FF7000}/prisonmenu{d5dedd} - Настройки скрипта
-{01A0E9}Весь функционал скрипта находится в Быстром Меню (ПКМ + G)
-
-{FF0000}Закрыть окно: Backspace, Enter, ESC]]
 
 
 
 function main()
-    if not isSampfuncsLoaded() or not isSampLoaded() then return end
-    while not isSampAvailable() do wait(100) end
-	if sampGetCurrentServerName('SA-MP') then local start = false while start == false do wait(0) if sampGetCurrentServerName() ~= 'SA-MP' then start = true end end end
-	wait(5000)
-	if sampGetCurrentServerName():find('Advance.+') or sampGetCurrentServerName():find('.+Advance.+') then print('Идёт загрузка скрипта.') else print('Скрипт не предназначен для данного сервера') print(sampGetCurrentServerName()) thisScript():unload() end
-    if aupd == true then apdeit() end
-    -- register commands
-    sampRegisterChatCommand("jd", jd)
-	sampRegisterChatCommand("график", function() grafeks.v = not grafeks.v end)
-	sampRegisterChatCommand("prisonhelp", function() prishelp.v = not prishelp.v end)
-	sampRegisterChatCommand("режим", function() imguilec.v = not imguilec.v end)
-	sampRegisterChatCommand("prisonoverlay", overlaysuka)
-	sampRegisterChatCommand("prisonoverlaypos", overlaypos)
-    sampRegisterChatCommand("prisonreload", reloader)
-    sampRegisterChatCommand("prisonupdate", updates)
-    sampRegisterChatCommand("prisonver", apdeit)
-    sampRegisterChatCommand("cam", cam)
-    sampRegisterChatCommand("panel", panel)
-    sampRegisterChatCommand('prisonmenu', function() prisonmenu.v = not prisonmenu.v end)
-    sampRegisterChatCommand("уведомления", function() sampAddChatMessage(fasttime and 'Уведомления выключены. Для включения введите {FF7000}/уведомления' or 'Уведомления включены. Для выключения введите {FF7000}/уведомления', 0x01A0E9) pris.fasttime = not pris.fasttime inicfg.save(default, 'PrisonHelper') end)
-    sampRegisterChatCommand("prisonsetime", function() prisontime = true sampSendChat('/c 60') end)
+  if not isSampfuncsLoaded() or not isSampLoaded() then return end
+  while not isSampAvailable() do wait(100) end
+  local ip = sampGetCurrentServerAddress()
 
+  if ip:find('176.32.36.103') or ip:find('176.32.39.159') then activ = true sampAddChatMessage('{FF0000}AutoInvite {FFFFFF}для {00FF00}Way Of Life и After Life {01A0E9}загружен', - 1) sampAddChatMessage(teg ..'/wolhelp - команды скрипта. Версия скрипта: {d5dedd}' ..thisScript().version, - 1) sampAddChatMessage(teg ..'Если ваша статистика не была проверена автоматически введите {FF7000}/getstat', -1) if wol.mvd then if script.find('MVDhelper Era') then script.find('MVDhelper Era'):unload() end end else thisScript():unload() end
 
-    sampAddChatMessage(teg..'Успешно загружен. Версия: {ff7000}' ..thisScript().version, - 1)
-	imgui.Process = true
-	print('Скрипт успешно загружен.')
+  if aupd == true then apdeit() end
+  imgui.ShowCursor = scriptmenu.v or imguifaq.v or tporg.v or picupsimgui.v
+  imgui.Process = true
+  sampRegisterChatCommand('swatgun', function(nambs) if #nambs ~= 0 and nambs ~= ' ' then naambs = nambs swatgun = true else sampAddChatMessage(teg ..'Вы введи неправильно команду. {FF7000}/swatgun [0-1]', -1) end end)
+  sampRegisterChatCommand('wolgun', function() sampSendPickedUpPickup(getgunses[orgs]) end)
+  sampRegisterChatCommand('getjob', function() sampSendPickedUpPickup(168) end)
+  sampRegisterChatCommand('getstat', function() getstat = true sampSendChat('/mm') end)
+  sampRegisterChatCommand('wolhelp', function() sampShowDialog(132131, 'WOL Help', dhelp, 'Ok!', _, 0) end)
+  sampRegisterChatCommand('wolreload', function() thisScript():reload() end)
+  sampRegisterChatCommand('wolmenu', function() scriptmenu.v = true end)
+  sampRegisterChatCommand('woltp', function() tporg.v = true end)
+  sampRegisterChatCommand('tpfind', function(res) sampSendChat('/find '..res) tpfindresult = true end)
 
-    if pris.fasttime == true then lua_thread.create(napominalka) sampAddChatMessage(teg ..'Уведомления графика тюрьмы {00FF00}включены', - 1) end
-    if pris.grafiktime == true then sampAddChatMessage(teg ..'Уведомления графика тюрьмы в /c 60 {00FF00}включены', - 1) end
-    if pris.paydayhelp == true and paydayinformer:status() == 'suspended' or paydayinformer:status() == 'dead' then paydayinformer:run() end
+  if not doesFileExist('moonloader\\config\\Way_Of_Life_Helper.ini') then inicfg.save(default, 'Way_Of_Life_Helper.ini') sampAddChatMessage(teg ..'Ini файл был создан.', - 1) end
 
-if pris.fastmenu then
-    rkeys.registerHotKey({vkeys.VK_RBUTTON, vkeys.VK_G}, true, function ()
-        local result, ped = getCharPlayerIsTargeting(PLAYER_HANDLE)
-        if result then local res, id = sampGetPlayerIdByCharHandle(ped); if res then name = sampGetPlayerNickname(id) prisonpedid, prisonpedname = id, name; fastmenus.v = true end end
-    end)
+  while true do
+    -- LOAD PARAMS
+    wol = ini.WOL
+    aupd = wol.aupd
+    adownload = wol.adownload
+    org = wol.org
+    hide = wol.hide
+    autogun = wol.autogun
+    mvd = wol.mvd
+    gun = wol.gun
+    wolpass = wol.wolpass
+    wolalogin = wol.wolalogin
+    wait(0)
+  end
 end
 
-rkeys.registerHotKey({vkeys.VK_MENU, vkeys.VK_OEM_5}, true, function()
-	if offsendchat ~= nil then offsendchat:terminate() sampAddChatMessage(teg ..'Зачитка лекции остановлена', - 1) offsendchat = nil end
-	if offfastmenuchat ~= nil then offfastmenuchat:terminate() sampAddChatMessage(teg ..'Работа биндера остановлена', - 1) offfastmenuchat = nil end
-end)
+function checkmenu()
+	local my_dialoges = {
+		{
+			title = string.format('My stat: %s', stat and 'Вкл' or 'Выкл')
+		}
+	}
+end
+
+function menu()
+	checkmenu()
+	submenus_show(my_dialoges, 'Ebat', 'Ok', 'Ne ok!', 'Nozad')
+	if stat == false then stat = true else stat = false end
+end
 
 
-    while true do
-        wait(0)
-        local ini = inicfg.load(default, 'PrisonHelper.ini')
-        pris = ini.prison
-        fasttime = pris.fasttime
-        -- Загрузка времени
-        local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
-        local dt = os.date("*t", os.time(dt))
+function pickupid(model)
+  local poolPtr = sampGetPickupPoolPtr()
+  local ptwo = readMemory(poolPtr, 4, 0)
+  if ptwo > 0 then
+    ptwo = poolPtr + 0x4
+    local pthree = poolPtr + 0xF004
+    for id = 1, 4096 do
+      local pfive = readMemory(ptwo + id * 4, 4, false)
+      if pfive < 0 or pfive > 0 then
+        pfive = readMemory(pthree + id * 20, 4, false)
+        if pfive == 353 then
+          return id
+        end
+      end
     end
+  end
 end
 
-function warnotm(id)
-    sampSendChat('Так! Пытаемся взломать замок?')
-    wait(500)
-    sampSendChat('Я это заберу.')
-    wait(500)
-    sampSendChat('/me забрал у заключённого отмычку')
-    wait(500)
-    sampSendChat('/jaildoor')
-    wait(250)
-    sampSendChat('/jaildoor')
-    wait(1000)
-    sampSendChat('/do Отмычка в руке.')
-    wait(1000)
-    sampSendChat('/me убрал отмычку в карман')
-    wait(1000)
-    sampSendChat('/do Отмычка в кармане.')
-    wait(1000)
-    sampSendChat('Зключённый №' ..id ..', Вам вынесено камерное предупреждение за попытку взлома замка.')
-    wait(2000)
-    sampSendChat('При последующих попытках я буду вынужден надеть на Вас наручники.')
-    pluswarn(id)
-    --wait(100)
-    --sampSendChat('В данный момент у вас ' ..checkwarn(sampGetPlayerNickname(id)) ..' предупреждений')
+
+
+function getorg(orges)
+  if orges:find('LSPD') then return 1 end
+  if orges:find('FBI') then return 2 end
+  if orges:find('S.W.A.T') then return 3 end
+  if orges:find('ВВС') then return 4 end
+  if orges:find('Army LV') then return 5 end
+  if orges:find('Army SF') then return 6 end
+  if orges:find('Мэрия') then return 7 end
+  if orges:find('Правительство') then return 8 end
 end
 
-function otm()
-    sampSendChat('Так! Пытаемся взломать замок?')
-    wait(500)
-    sampSendChat('Я это заберу.')
-    wait(500)
-    sampSendChat('/me забрал у заключённого отмычку')
-    wait(500)
-    sampSendChat('/jaildoor')
-    wait(250)
-    sampSendChat('/jaildoor')
-    wait(1000)
-    sampSendChat('/do Отмычка в руке.')
-    wait(1000)
-    sampSendChat('/me убрал отмычку в карман')
-    wait(1000)
-    sampSendChat('/do Отмычка в кармане.')
-    wait(2000)
-    sampSendChat('/n /key в наручниках - Non RP.')
-end
 
-function jd()
-    lua_thread.create(function()
-        sampSendChat('/me протянулся к поясному держателю, затем достал ключ от камеры')
-        wait(250)
-        sampSendChat('/me открыл/закрыл камеру, затем повесил ключ назад')
-        sampSendChat('/jaildoor')
-    end)
-end
 
-function cam()
-    sampSendChat('/me подошёл к панели и начал смотреть в мониторы')
-    sampSendChat('/jailcam')
+function SE.onServerMessage(color, text)
+  if text:find('.+Вы успешно авторизовались!') then getstat = true sampSendChat('/mm') end
 end
-
-function panel()
-    sampSendChat('/me подошёл к панели и нажал на кнопку открытия/закрытия камер на пульте')
-    sampSendChat('/jaildoor')
-end
-
-function reloader()
-    lua_thread.create(function()
-        sampAddChatMessage('PrisonHelper {01A0E9}будет перезагружен через 1 секунду.', 0xFF7000)
-        wait(1000)
-        showCursor(false, false)
-        script.this:reload()
-    end)
-end
-
-function reshotka(id)
-    sampSendChat('Заключённый №'..id ..'.')
-    wait(1000)
-    sampSendChat('Вам вынесено камерное предупреждение за то, что вы гремите решёткой камеры.')
-    wait(1000)
-    sampSendChat('При последующем выносе предупреждения я буду вынужден надеть на Вас наручники.')
-    wait(1000)
-    sampSendChat('/n По РП с наручниками за спиной ты не можешь бить по решётке. Если замечу - залью ЖБ за NonRP.')
-    pluswarn(id)
-    --wait(1000)
-    --sampSendChat('В данный момент у вас ' ..checkwarn(sampGetPlayerNickname(id)) ..' предупреждений')
-end
-
-function uncuff(id)
-    sampSendChat('/do Наручники на человеке.')
-    wait(1000)
-    sampSendChat('/me просунул руку через решётку')
-    wait(1000)
-    sampSendChat('/me расстегнул наручники')
-    wait(1000)
-    sampSendChat('/uncuff ' ..id)
-    wait(1000)
-    sampSendChat('/me высунул руки из решётки')
-    wait(1000)
-    sampSendChat('/me повесил наручники на пояс')
-end
-
-function cuff(id)
-    sampSendChat('/do На поясном держателе висят наручники.')
-    wait(1000)
-    sampSendChat('/me снял наручники с поясного держателя')
-    wait(1000)
-    sampSendChat('/me просунул руки через решётку')
-    wait(1000)
-    sampSendChat('/me надел наручники на руки преступника и застегнул их')
-    wait(1000)
-    sampSendChat('/cuff ' ..id)
-    wait(1000)
-    sampSendChat('/me высунул руки из решётки')
-end
-
-function warn(id)
-    sampSendChat('Здравствуйте, заключённый №' ..id..'.')
-    wait(1000 )
-    sampSendChat('Вам вынесено предупреждение за нарушение внутреннего порядка.')
-    wait(1000)
-    sampSendChat('/me достав КПК из кармана штанов, ввёл логин и пароль в базе данных')
-    wait(1000)
-    sampSendChat('/me зашёл в раздел "предупреждения заключённых"')
-    wait(1000)
-    sampSendChat('/me ввёл номер заключённого, стоящего напротив, затем выдал предупреждение')
-    wait(1000)
-    sampSendChat('/do Предупреждение выдано.')
-    wait(1000)
-    sampSendChat('/me убрал КПК в карман')
-    pluswarn(id)
-    --wait(1000)
-    --sampSendChat('В данный момент у вас ' ..checkwarn(sampGetPlayerNickname(id)) ..' предупреждений')
-end
-
-function unwarn(id)
-    sampSendChat('Заключённый №'..id..', я снимаю с Вас последнее выданное предупреждение.')
-    wait(1000)
-    sampSendChat('Но это не значит, что я не выдам его снова, если Вы будете нарушать режим.')
-    wait(1000)
-    sampSendChat('/me достав КПК из кармана штанов, ввёл логин и пароль в базе данных')
-    wait(1000)
-    sampSendChat('/me зашёл в раздел "предупреждения заключённых"')
-    wait(1000)
-    sampSendChat('/me ввёл номер заключённого, стоящего напротив, затем удалил предупреждение')
-    wait(1000)
-    sampSendChat('/do Предупреждение удалено.')
-    wait(1000)
-    sampSendChat('/me убрал КПК в карман')
-    minuswarn(id, sampGetPlayerNickname(id))
-end
-
-function unwarnall(id)
-    sampSendChat('Заключённый №'..id..', я снимаю с Вас последние выданные предупреждения.')
-    wait(1000 )
-    sampSendChat('Но это не значит, что я не выдам его снова, если Вы будете нарушать режим.')
-    wait(1000 )
-    sampSendChat('/me достав КПК из кармана штанов, ввёл логин и пароль в базе данных')
-    wait(1000 )
-    sampSendChat('/me зашёл в раздел "предупреждения заключённых"')
-    wait(1000 )
-    sampSendChat('/me ввёл номер заключённого, стоящего напротив, затем удалил предупреждения')
-    wait(1000 )
-    sampSendChat('/do Предупреждения удалены.')
-    wait(1000 )
-    sampSendChat('/me убрал КПК в карман')
-    minusallwarn(id, sampGetPlayerNickname(id))
-end
-
-function privet(id)
-    sampSendChat('Здравствуйте, заключённый №' ..id..'.')
-    wait(2000)
-    sampSendChat('Чем я могу Вам помочь?')
-end
-
-function stol(id)
-    sampSendChat('Заключённый №' ..id ..', немедленно слезьте со стола!')
-    wait(1000)
-    sampSendChat('В противном случае я буду вынужден применить резиновую дубинку или резиновые пули!')
-end
-
-function stoladv()
-    sampSendChat('Товарищ адвокат. Прошу Вас слезть со стола.')
-    wait(1000)
-    sampSendChat('В противном случае я буду вынужден заставить Вас сделать это.')
-end
-
-function kpz(id)
-    sampSendChat('Заключённый №' ..id ..', Вы посажены в одиночную камеру без шанса на выход.')
-    wait(1000)
-    sampSendChat('Если же Вы попытаетесь взломать замок, я надену на Вас наручники.')
-end
-
-function kpzvrem(id)
-    sampSendChat('Заключённый №' ..id ..', Вы посажены в одиночную камеру на две минуты.')
-    wait(1000)
-    sampSendChat('Если же Вы попытаетесь взломать замок - я продлю время вашего нахождения в камере.')
-    wait(1000)
-    sampSendChat('Или же надену на Вас наручники, если и это не поможет.')
-    wait(1000)
-    sampSendChat('/do Наручники на человеке.')
-    wait(1000)
-    sampSendChat('/me просунул руку через решётку')
-    wait(1000)
-    sampSendChat('/me расстегнул наручники')
-    wait(1000)
-    sampSendChat('/uncuff ' ..id)
-    wait(1000)
-    sampSendChat('/me высунул руки из решётки')
-    wait(1000)
-    sampSendChat('/me повесил наручники на пояс')
-end
-
-function kpzkon(id)
-    sampSendChat('Заключённый №' ..id ..', время Вашего нахождения в одиночной камере подошло к концу.')
-    wait(1000)
-    sampSendChat('/me протянулся к поясному держателю, затем достал ключ от камеры')
-    wait(250)
-    sampSendChat('/me открыл/закрыл камеру, затем повесил ключ назад')
-    sampSendChat('/jaildoor')
-    wait(1000)
-    sampSendChat('Можете выходить из камеры, но больше не нарушайте.')
-    minuswarn(id, sampGetPlayerNickname(id))
-end
-
-function vremnach()
-    sampSendChat('/s Внимание, заключённые. Сейчас будет объявлено свободное время.')
-    wait(6000)
-    sampSendChat('/s Прошу всех заключённых выйти из камер после их открытия.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться...')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать...')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы.')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же.')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function vremkon()
-    sampSendChat('/s Внимание, заключённые. Свободное время подошло к концу.')
-    wait(6000)
-    sampSendChat('/s Прошу всех заключённых разойтись по камерам, соблюдая внутренний режим тюрьмы.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться...')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать...')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы.')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же.')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function sportnach()
-    sampSendChat('/s Внимание, заключённые. Сейчас объявлено занятие спортом в спортзале.')
-    wait(6000)
-    sampSendChat('/s Прошу всех заключёных пройти в спортзал.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать... ')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы. ')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же. ')
-    wait(6000)
-    sampSendChat('/s Спасибо. ')
-end
-
-function sportkon()
-    sampSendChat('/s Внимание, заключённые. Занятие спортом в спортзале подошло к концу.')
-    wait(6000)
-    sampSendChat('/s Прошу всех заключённых пройти на кухню для готовки ужина.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать... ')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы. ')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же. ')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function ubornach(vib)
-    if vib == 0 then sampSendChat('/s Внимание, заключённые. Объявлено время уборки двора и готовки еды.') elseif vib == 1 then sampSendChat('/s Внимание, заключённые. Объявлено время уборки двора.') end
-    wait(6000)
-		if vib == 0 then sampSendChat('/s Прошу всех заключённых пройти либо на кухню, либо во внутренний двор.') elseif vib == 1 then sampSendChat('/s Прошу всех заключённых пройти во внутренний двор.') end
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать... ')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы. ')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же. ')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function uborkon(vib)
-    if vib == 0 then sampSendChat('/s Внимание, заключённые. Время уборки и готовки еды подошло к концу.') elseif vib == 1 then sampSendChat('Внимание, заключённые. Время уборки подошло к концу.') end
-    wait(6000)
-    sampSendChat('/s Прошу всех заключённых пройти на кухню для обеда.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать... ')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы. ')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же. ')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function uzhinnach()
-    sampSendChat('/s Внимание, заключённые. Сейчас объявлено время готовки ужина.')
-    wait(6000)
-    sampSendChat('/s Прошу всех заключённых пройти на кухню для готовки ужина.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать... ')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы. ')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же. ')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function uzhinkon()
-    sampSendChat('/s Внимание, заключённые. Время ужина подошло к концу. Объявлено свободное время.')
-    wait(6000)
-    sampSendChat('/s Прошу всех заключённых заняться своими делами. Вы можете быть везде кроме внутреннего двора.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать... ')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы. ')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же. ')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function obednach()
-    sampSendChat('/s Внимание, заключённые. Объявлено время обеда.')
-    wait(6000)
-    sampSendChat('/s Прошу всех заключённых пройти на кухню для готовки обеда.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать... ')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы. ')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же. ')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function obedkon()
-    sampSendChat('/s Внимание, заключённые. Объявлено свободное время.')
-    wait(6000)
-    sampSendChat('/s Прошу всех заключённых заняться своими делами. Вы можете быть везде кроме внутреннего двора.')
-    wait(6000)
-    sampSendChat('/s Напоминаю: любое нарушение внутреннего режима будет пресекаться... ')
-    wait(6000)
-    sampSendChat('/s ...грубой физической силой. Охрана тюрьмы вправе использовать... ')
-    wait(6000)
-    sampSendChat('/s ...резиновые дубинки или резиновые пули для сохранения режима тюрьмы. ')
-    wait(6000)
-    sampSendChat('/s Помните: относитесь к людям хорошо, и они ответят Вам тем же. ')
-    wait(6000)
-    sampSendChat('/s Спасибо.')
-end
-
-function SendReport(args)
-    lua_thread.create(function()
-        rep = true
-        sampSendChat('/mn')
-        sampSendDialogResponse(27, 1, 5, - 1)
-        sampSendDialogResponse(80, 1, - 1, args)
-        wait(1200)
-        rep = false
-    end)
-end
-
-function SendReportDialog(id, name, args)
-	lua_thread.create(function()
-		rep = true
-		sampSendChat('/mn')
-		sampSendDialogResponse(27, 1, 5, - 1)
-		sampSendDialogResponse(80, 1, - 1, name..'['..id..'] '..args)
-		wait(1200)
-		rep = false
-	end)
-end
-
 
 function SE.onShowDialog(dialogId, style, title, button1, button2, text)
-  if prisontime == true then
-    if text:find('.+Текущее время:.+%{3399FF}%d+:%d+.+') then dtime = text:match('.+Текущее время.+%{3399FF}(%d+):%d+.+') pris.hour = systime - dtime inicfg.save(default, 'PrisonHelper')
-      sampAddChatMessage('Время сохранено. Время от МСК: {FF7000}' ..pris.hour, 0x01A0E9)
+
+  if wolalogin == true then
+    if title == '{AEFFFF}Авторизация' then
+      if text:find('.+Попыток: %d+ из %d+.+') then
+        sampAddChatMessage(teg ..'Вы ввели неправильно пароль. Для смены пароля введите /wolpass', - 1)
+      else
+        sampSendDialogResponse(dialogId, 1, - 1, wolpass)
+      end
     end
   end
-  if title:find('.+Точное время') and pris.grafiktime then graf = grafiktimes() sampAddChatMessage(graf, 0x01A0E9) end
-  if dialogId == 80 and rep == true -- РЕПОРТ
-  then return false
+
+  if activ then
+    if title == '{FFFFFF}RolePlay Тест | Вопрос {FFC100}№1' then sampSendDialogResponse(dialogId, 1, - 1, '2') end
+    if title == '{FFFFFF}RolePlay Тест | Вопрос {FFC100}№2' then sampSendDialogResponse(dialogId, 1, - 1, '4') end
+    if title == '{FFFFFF}RolePlay Тест | Вопрос {FFC100}№3' then sampSendDialogResponse(dialogId, 1, - 1, '1') end
+    if title == '{FFFFFF}RolePlay Тест | Вопрос {FFC100}№4' then sampSendDialogResponse(dialogId, 1, - 1, '1') end
+    if title == '{FFFFFF}RolePlay Тест | Вопрос {FFC100}№5' then sampSendDialogResponse(dialogId, 1, - 1, '3') end
+    if title == '{FFFFFF}RolePlay Тест | Вопрос {FFC100}№6' then sampSendDialogResponse(dialogId, 1, - 1, '2') end
+    if title == '{FFFFFF}RolePlay Тест | Вопрос {FFC100}№7' then sampSendDialogResponse(dialogId, 1, - 1, '4') lua_thread.create(function() wait(500) getstat = true sampSendChat('/mm') end) end
   end
 
-  if dialogId == 27 and rep == true -- РЕПОРТ
-  then return false
+  if getstat == true then
+    if title:find('{AEFFFF}Игровой уровень: %d+ | Очки опыта: %d+ из %d+') then
+      sampSendDialogResponse(5051, 1, 0, _)
+      return false
+    end
+    if title:find('{33AA33}Статистика игрового аккаунта:{ffffff} .+') then
+      warn = text:match('.+(%d+)/.+Уровень Преступлений:.+')
+      orges = text:match('.+Организация:.+%{ffffff}(.+)Ранг:.+')
+      orgs = getorg(orges)
+      getstat = false
+      if warn ~= '0' then sampAddChatMessage(teg ..'Ваша организация: '..orges, -1) sampAddChatMessage(teg ..'На вашем аккаунте имеется {FF7000}' ..warn ..' {FFFFFF}варн(а). Рекомендуем снять для избежания бана!', - 1) return false
+      else
+        sampAddChatMessage(teg ..'Ваш аккаунт чист. Ваша организация: '..orges ..'.', -1)
+				return false
+      end
+    end
+  end
+
+  if swatgun == true then
+    if title == 'Комплекты « SWAT » San Andreas' then for i = 0, gun * 4 do sampSendDialogResponse(dialogId, tonumber(naambs), -1, -1) end swatgun = false end
+  end
+
+  if autogun == true and title:find('Набор.+') and dialogId == 5051 then
+    sampSendDialogResponse(dialogId, 1, 0, 1)
+    for i = 0, gun do
+      sampSendDialogResponse(dialogId, 1, 3, 1)
+      sampSendDialogResponse(dialogId, 1, 4, 1)
+      sampSendDialogResponse(dialogId, 1, 5, 1)
+      sampSendDialogResponse(dialogId, 1, 6, 1)
+    end
   end
 end
 
-
-
+--ОБНОВА
 
 function apdeit()
-    async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelperVer', nil --[[параметры запроса]],
+    async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/WOL/master/WOLVER', nil --[[параметры запроса]],
         function(resp) -- вызовется при успешном выполнении и получении ответа
-            newvers = resp.text:match('Version = (.+), URL.+') if newvers > thisScript().version then sampAddChatMessage(teg ..'Обнаружено обновление до v.{FF0000}'..newvers ..'{01A0E9}. Для обновления используйте /prisonmenu', - 1) elseif newvers == thisScript().version then sampAddChatMessage(teg..'У вас актуальная версия скрипта.', - 1) elseif newvers < thisScript().version then sampAddChatMessage(teg..'У вас тестовая версия скрипта.', - 1) end
+			local suk = resp.text
+            newvers = suk:match('Version = (.+), URL.+') if newvers > thisScript().version then sampAddChatMessage(teg ..'Обнаружено обновление до v.{FF0000}'..newvers ..'{01A0E9}. Для обновления используйте /wolmenu', - 1) elseif newvers == thisScript().version then sampAddChatMessage(teg..'У вас актуальная версия скрипта.', - 1) elseif newvers < thisScript().version then sampAddChatMessage(teg..'У вас тестовая версия скрипта.', - 1) end
             print('Проверка обновления')
         end,
         function(err) -- вызовется при ошибке, err - текст ошибки. эту функцию можно не указывать
@@ -652,10 +307,10 @@ end
 
 
 function updates()
-    async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/PrisonHelper/master/PrisonHelper.lua', nil --[[параметры запроса]],
+    async_http_request('GET', 'https://raw.githubusercontent.com/SaburoShimizu/WOL/master/WolHelper.lua', nil --[[параметры запроса]],
         function(respe) -- вызовется при успешном выполнении и получении ответа
             if #respe.text > 0 then
-                f = io.open(getWorkingDirectory() ..'/PrisonHelper.lua', 'wb')
+                f = io.open(getWorkingDirectory() ..'/WolHelper.lua', 'wb')
                 f:write(u8:decode(respe.text))
                 f:close()
                 sampAddChatMessage(teg ..'Обновление успешно скачалось. Скрипт перезапуститься автоматически', - 1)
@@ -671,254 +326,221 @@ function updates()
     end)
 end
 
-
-
-function checkwarn(name)
-	if varns[name] ~= nil then return varns[name] else return 0 end
-end
-
-function pdinf()
-	sampAddChatMessage(teg..'Напоминание о PayDay: {00FF00}включено', -1)
-	while true do wait(0)
-		dt = os.date('*t'); dt.min = dt.min; dt.sec = dt.sec
-		if dt.min == 55 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталось 5 минут. Не выходите в АФК', 0x01A0E9) wait(1000) end
-		if dt.min == 59 and dt.sec == 10 then sampAddChatMessage('[TimeInChat] {D5DEDD}До PayDay осталась 1 минута. Не выходите в АФК', 0x01A0E9) wait(1000) end
+function imgui.OnDrawFrame()
+	imgui.ShowCursor = scriptmenu.v or imguifaq.v or tporg.v or picupsimgui.v
+    if scriptmenu.v then
+        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
+        imgui.Begin(u8'Настройки WolHelper', scriptmenu, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.MenuBar)
+        if imgui.BeginMenuBar() then
+            if imgui.BeginMenu(u8'Меню скрипта') then
+                if imgui.MenuItem(u8'Перезагрузить') then
+					showCursor(false, false)
+                    thisScript():reload()
+                end
+                if imgui.MenuItem(u8'Выключить') then
+					showCursor(false, false)
+                    thisScript():unload()
+                end
+                imgui.EndMenu()
+            end
+            if imgui.BeginMenu(u8'Обновление') then
+                if imgui.MenuItem(u8'Проверка обновления') then
+                    apdeit()
+                end
+                if imgui.MenuItem(u8'Принудительно обновиться') then
+                    updates()
+                end
+                imgui.EndMenu()
+            end
+            if imgui.BeginMenu(u8'Функции') then
+                if imgui.MenuItem(u8'ТП меню') then
+                    tporg.v = true
+					scriptmenu.v = false
+                end
+                if imgui.MenuItem(u8'Меню пикапов') then
+					picupsimgui.v = true
+					scriptmenu.v = false
+                end
+                if imgui.MenuItem(u8'Взять оружие') then
+					if orgs ~= nil then sampSendPickedUpPickup(getgunses[orgs]) else sampAddChatMessage(teg ..'Организация не определена', -1) end
+					scriptmenu.v = false
+                end
+                if imgui.MenuItem(u8'Трудоустройство') then
+					sampSendPickedUpPickup(168)
+					scriptmenu.v = false
+                end
+                if imgui.MenuItem(u8'Проверка статистики') then
+					getstat = true sampSendChat('/mm')
+                end
+                imgui.EndMenu()
+            end
+            if imgui.BeginMenu('F.A.Q') then
+                if imgui.MenuItem(u8'Показать F.A.Q') then
+                    imguifaq.v = true
+                    scriptmenu.v = false
+                end
+                imgui.EndMenu()
+            end
+            imgui.EndMenuBar()
+			imgui.Text(u8'Автоматическое обновление')
+			imgui.SameLine(365)
+	        imadd.ToggleButton('ainv##6', imguiaupd)
+			wol.aupd = imguiaupd.v
+			imgui.Text(u8'Автоинвайт')
+			imgui.SameLine(365)
+	        imadd.ToggleButton('ainv##6', imguiautoinv)
+			wol.org = imguiautoinv.v
+			imgui.Text(u8'Автоган')
+			imgui.SameLine(365)
+	        imadd.ToggleButton('autogun##6', imguiautogun)
+			wol.autogun = imguiautogun.v
+			imgui.Text(u8'Выключать MVD helper')
+			imgui.SameLine(365)
+	        imadd.ToggleButton('mvd##6', imguimvd)
+			wol.mvd = imguimvd.v
+			imgui.Text(u8'Автологин')
+			imgui.SameLine(365)
+	        imadd.ToggleButton('alogin##6', imguiaulog)
+			wol.wolalogin = imguiaulog.v
+			if imguiaulog.v then
+				imgui.InputText(u8'Введите пароль', imguipass)
+				imgui.Text(u8'Текущий пароль: '..wol.wolpass)
+				wol.wolpass = u8:decode(imguipass.v)
+			end
+			imgui.Spacing()
+			imgui.Separator()
+			imgui.Spacing()
+			if imgui.MenuItem(u8'Сохранить настройки в INI') then inicfg.save(default, 'Way_Of_Life_Helper.ini') sampAddChatMessage(teg ..'Настройки сохранены', -1) end
+			if imgui.MenuItem(u8'Сбросить настройки INI') then inicfg.save(restore, 'Way_Of_Life_Helper.ini') sampAddChatMessage(teg ..'Настройки сброшены', -1) end
+        end
+        imgui.End()
+    end
+    if imguifaq.v then
+        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
+        imgui.Begin(u8'F.A.Q', imguifaq, imgui.WindowFlags.AlwaysAutoResize + imgui.WindowFlags.NoSavedSettings)
+        imgui.CenterTextColoredRGB(dhelp)
+		if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then imguifaq.v = false end
+        imgui.End()
+    end
+	if tporg.v then
+		imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        --imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
+        imgui.Begin(u8'ТП меню', tporg, imgui.WindowFlags.AlwaysAutoResize)
+		if isCharInAnyCar(PLAYER_PED) then
+			if imgui.CollapsingHeader(u8'ТП (с авто)') then
+				if imgui.MenuItem(u8'Мэрия') then setCharCoordinates(PLAYER_PED, 1476, -1708, 14) tporg.v = false end
+			end
+		end
+		if imgui.CollapsingHeader(u8'ТП в организации') then
+			if imgui.MenuItem(u8'LSPD') then sampSendPickedUpPickup(103) tporg.v = false end
+			if imgui.MenuItem(u8'Мэрия') then sampSendPickedUpPickup(198) tporg.v = false end
+			if imgui.MenuItem(u8'Мэрия (сзади)') then sampSendPickedUpPickup(200) tporg.v = false end
+			if imgui.MenuItem(u8'Правительство') then sampSendPickedUpPickup(212) tporg.v = false end
+			if imgui.MenuItem(u8'S.W.A.T') then sampSendPickedUpPickup(24) tporg.v = false end
+			if imgui.MenuItem(u8'FBI') then sampSendPickedUpPickup(181) tporg.v = false end
+			if imgui.MenuItem(u8'SFPD') then sampSendPickedUpPickup(112) tporg.v = false end
+			if imgui.MenuItem(u8'СВ (Склад)') then sampSendPickedUpPickup(223) tporg.v = false end
+			if imgui.MenuItem(u8'ВВС (Склад)') then sampSendPickedUpPickup(35) tporg.v = false end
+			if imgui.MenuItem(u8'ВВС (Штаб)') then sampSendPickedUpPickup(38) tporg.v = false end
+			if imgui.MenuItem(u8'ВВС (Казарма)') then sampSendPickedUpPickup(32) tporg.v = false end
+			if imgui.MenuItem(u8'LVPD') then sampSendPickedUpPickup(172) tporg.v = false end
+			if imgui.MenuItem(u8'LCN') then sampSendPickedUpPickup(183) tporg.v = false end
+			if imgui.MenuItem(u8'RM') then sampSendPickedUpPickup(184) tporg.v = false end
+			if imgui.MenuItem(u8'Yakuza') then sampSendPickedUpPickup(179) tporg.v = false end
+			if imgui.MenuItem(u8'Hitmans (В инте нельзя)') then setCharCoordinates(PLAYER_PED, -2240, 2351, 5) tporg.v = false end
+		end
+		if imgui.CollapsingHeader(u8'ТП из организации') then
+			if imgui.MenuItem(u8'LSPD') then sampSendPickedUpPickup(104) tporg.v = false end
+			if imgui.MenuItem(u8'Мэрия') then sampSendPickedUpPickup(201) tporg.v = false end
+			if imgui.MenuItem(u8'Мэрия (сзади)') then sampSendPickedUpPickup(199) tporg.v = false end
+			if imgui.MenuItem(u8'Правительство') then sampSendPickedUpPickup(213) tporg.v = false end
+			if imgui.MenuItem(u8'S.W.A.T') then sampSendPickedUpPickup(25) tporg.v = false end
+			if imgui.MenuItem(u8'FBI') then sampSendPickedUpPickup(180) tporg.v = false end
+			if imgui.MenuItem(u8'SFPD') then sampSendPickedUpPickup(111) tporg.v = false end
+			if imgui.MenuItem(u8'СВ (Склад)') then sampSendPickedUpPickup(224) tporg.v = false end
+			if imgui.MenuItem(u8'ВВС (Склад)') then sampSendPickedUpPickup(36) tporg.v = false end
+			if imgui.MenuItem(u8'ВВС (Штаб)') then sampSendPickedUpPickup(39) tporg.v = false end
+			if imgui.MenuItem(u8'ВВС (Казарма)') then sampSendPickedUpPickup(33) tporg.v = false end
+			if imgui.MenuItem(u8'LVPD') then sampSendPickedUpPickup(173) tporg.v = false end
+			if imgui.MenuItem(u8'LCN') then sampSendPickedUpPickup(182) tporg.v = false end
+			if imgui.MenuItem(u8'RM') then sampSendPickedUpPickup(177) tporg.v = false end
+			if imgui.MenuItem(u8'Yakuza') then sampSendPickedUpPickup(178) tporg.v = false end
+		end
+		if imgui.CollapsingHeader(u8'ТП по метке') then
+			local result, posX, posY, posZ = getTargetBlipCoordinates()
+			local positionX, positionY, positionZ = getCharCoordinates(PLAYER_PED)
+			if result then
+				imgui.Text(u8(string.format('Координаты метки: %d, %d, %d', posX, posY, posZ)))
+				if imgui.MenuItem(u8'Телепортироваться по метке') then
+					local result, posX, posY, posZ = getTargetBlipCoordinatesFixed()
+					setCharCoordinates(PLAYER_PED, posX, posY, posZ)
+				end
+		 	else
+				imgui.Text(u8'Ошибка! Метка не стоит на карте') end
+			imgui.Text(u8(string.format('Ваши координаты: %d, %d, %d', positionX, positionY, positionZ)))
+		end
+		imgui.End()
+	end
+	if picupsimgui.v then
+		imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
+        --imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
+        imgui.Begin(u8'Меню пикапов', picupsimgui, imgui.WindowFlags.AlwaysAutoResize)
+		if imgui.MenuItem(u8'Смена скина') then sampSendPickedUpPickup(picups['Clotch']) picupsimgui.v = false end
+		if imgui.CollapsingHeader(u8'Автосалоны') then
+			if imgui.MenuItem(u8'Автосалон A класса (SF)') then sampSendPickedUpPickup(picups.avtosalon[1]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'Автосалон B класса (SF)') then sampSendPickedUpPickup(picups.avtosalon[2]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'Автосалон Nope класса (LS)') then sampSendPickedUpPickup(picups.avtosalon[3]) picupsimgui.v = false end
+		end
+		if imgui.CollapsingHeader(u8'Взять ган') then
+			if imgui.MenuItem(u8'LSPD') then sampSendPickedUpPickup(getgunses[1]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'FBI') then sampSendPickedUpPickup(getgunses[2]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'SWAT') then sampSendPickedUpPickup(getgunses[3]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'ВВС') then sampSendPickedUpPickup(getgunses[4]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'Army LV') then sampSendPickedUpPickup(getgunses[5]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'Army SF') then sampSendPickedUpPickup(getgunses[6]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'Мэрия') then sampSendPickedUpPickup(getgunses[7]) picupsimgui.v = false end
+			if imgui.MenuItem(u8'Правительство') then sampSendPickedUpPickup(getgunses[8]) picupsimgui.v = false end
+		end
+		imgui.End()
 	end
 end
 
-function pluswarn(id)
-	id = tonumber(id)
-	local name = sampGetPlayerNickname(id)
-	if varns[name] ~= nil then varns[name] = varns[name] + 1 else varns[name] = 1 end
-	checkwarn(name)
-	notf.addNotification(string.format('Выдано предупреждение заключённому\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
-end
 
-function minuswarn(id, name)
-	if varns[name] ~= nil and varns[name] > 0 then varns[name] = varns[name] - 1 else varns[name] = nil end
-	checkwarn(name)
-	notf.addNotification(string.format('Снято предупреждение заключённого\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
-end
-
-function minusallwarn(id, name)
-	if varns[name] ~= nil and varns[name] > 0 then varns[name] = 0 else varns[name] = nil end
-	checkwarn(name)
-	notf.addNotification(string.format('Сняты все предупреждения\nзаключённого\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
-end
-
-varns = {}
-
-function overlaysuka()
-	pris.astoverlay = not pris.astoverlay
-	sampAddChatMessage(string.format('%s %s',teg, pris.astoverlay and 'Оверлей включён' or 'Оверлей выключен'), -1)
-end
-
-
-function overlaypos()
-    lua_thread.create(function()
-        sampAddChatMessage(teg ..'Для применения нажмите {FF7000}Enter', - 1)
-        robotet = true
-		showCursor(true, true)
-		while robotet == true do
-            wait(0)
-            InfoX, InfoY = getCursorPos()
-            if isKeyDown(VK_RETURN) then robotet = false end
-        end
-		wait(500)
-		pris.Xovers = InfoX
-		pris.Yovers = InfoY
-		inicfg.save(default, 'PrisonHelper')
-		showCursor(false, false)
-        print('X: '..InfoX ..' Y: '..InfoY)
-		imgui.Process = false
-		imgui.Process = true
-    end)
-end
-
-
-function imgui.OnDrawFrame()
-    if pris.astoverlay then
-        if pris.mouse then
-            imgui.ShowCursor = not pris.astoverlay or grafeks.v or prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
-        else
-            imgui.ShowCursor = not pris.astoverlay and not grafeks.v and not prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
-        end
-    else
-        if pris.mouse then
-            imgui.ShowCursor = pris.astoverlay or grafeks.v or prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
-        else
-            imgui.ShowCursor = pris.astoverlay and not grafeks.v and not prishelp.v or imguilec.v or prisonmenu.v or fastmenus.v
-        end
-    end
-
-    if prisonmenu.v then
-        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
-        imgui.Begin(u8'Настройки PrisonHelper', prisonmenu, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
-        imgui.Text(u8'Расписание в чате') ShowHelpMarker('Показывает график по расписанию в чате')
-        imgui.SameLine(365)
-        imadd.ToggleButton('raspchat##1', raspchat)
-        pris.fasttime = raspchat.v
-        imgui.Text(u8'Оверлей') ShowHelpMarker('Показывает график и время')
-        imgui.SameLine(365)
-        imadd.ToggleButton('Overlay##2', overllay)
-        pris.astoverlay = overllay.v
-        imgui.Text(u8'Мышка в /график и /prisonhelp') ShowHelpMarker('В /prisonhelp и /график будет\nактивироваться мышка')
-        imgui.SameLine(365)
-        imadd.ToggleButton('mish##3', mish)
-        pris.mouse = mish.v
-        imgui.Text(u8'Уведомления графика в /c 60') ShowHelpMarker('При вводе /c 60 будет выводиться график в чат')
-        imgui.SameLine(365)
-        imadd.ToggleButton('grafintime##4', grafintime)
-        pris.grafiktime = grafintime.v
-        imgui.Text(u8'Напоминание о PayDay') ShowHelpMarker('За 5 и за 1 минуту будет сообщение о PayDay')
-        imgui.SameLine(365)
-        imadd.ToggleButton('nappayday##5', nappayday)
-        pris.paydayhelp = nappayday.v
-        imgui.Text(u8'Быстрое меню (ПКМ + G)') ShowHelpMarker('Меню взаимодействия с игроком.')
-        imgui.SameLine(365)
-        imadd.ToggleButton('fastmennu##6', fastmennu)
-        pris.fastmenu = fastmennu.v
-		imgui.Spacing()
-		imgui.Separator()
-		imgui.Spacing()
-        if imgui.Button(u8'Информация о скрипте', btn_size) then prisonmenu.v = false; prishelp.v = true end
-        if imgui.Button(u8'Автонастройка времени', btn_size) then prisontime = true; sampSendChat('/c 60') end
-        if imgui.Button(u8'Сохранить в INI файл', btn_size) then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
-        if imgui.Button(u8'Перезапустить скрипт', btn_size) then sampAddChatMessage(teg ..'Началась перезагрузка. Скрипт запустится через {FF7000}5 сек.', - 1) prisonmenu.v = false showCursor(false, false) thisScript():reload() end
-        imgui.Spacing()
-		imgui.Separator()
-		imgui.Spacing()
-        if imgui.CollapsingHeader(u8'Обновление. Текущая версия скрипта: '..thisScript().version) then
-            imgui.Text(u8'Автообновление скрипта') ShowHelpMarker('При запуске игры будет поиск обновлений скрипта')
-            imgui.SameLine(365)
-            imadd.ToggleButton('avtoobnova##6', avtoobnova)
-            pris.aupd = avtoobnova.v
-			imgui.Separator()
-            if imgui.MenuItem(u8'Проверить версию') then apdeit() end
-            if imgui.MenuItem(u8'Принудительно обновить') then updates() end
-            if imgui.MenuItem(u8'Сохранить в INI') then inicfg.save(default, 'PrisonHelper') sampAddChatMessage(teg ..'Все настройки сохранены в INI файл', - 1) end
-        end
-        imgui.End()
-    end
-
-
-    if pris.astoverlay then
-        --imgui.ShowCursor = false
-        imgui.SetNextWindowPos(imgui.ImVec2(InfoX, InfoY), _, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
-        imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
-        --imgui.ShowCursor = false
-        grafek = grafiktimesoverlay()
-		imgui.CenterTextColoredRGB('{01A0E9}PrisonHelper')
-		imgui.Separator()
-        imgui.Text(u8(grafek)) -- простой текст внутри этого окна
-        imgui.Text(u8('Время: ' ..os.date('%H:%M:%S'))) -- простой текст внутри этого окна
-        imgui.End() -- конец окна
-    end
-
-
-    if pris.fastmenu then
-        if fastmenus.v then
-			local id, name = prisonpedid, prisonpedname
-            imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-            imgui.SetNextWindowSize(imgui.ImVec2(400, 300), imgui.Cond.FirstUseEver)
-            imgui.Begin(u8(string.format('%s[%d] Преды: %d', name, id, checkwarn(name))), fastmenus, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
-            if imgui.CollapsingHeader(u8'Обычные (Без команд)') then
-                if imgui.MenuItem(u8'Привет') then offfastmenuchat = lua_thread.create(function() privet(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Предупреждение') then offfastmenuchat = lua_thread.create(function() warn(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Снять предупреждение') then offfastmenuchat = lua_thread.create(function() unwarn(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Снять все предупреждения') then offfastmenuchat = lua_thread.create(function() unwarnall(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Отмычка') then offfastmenuchat = lua_thread.create(function() otm(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Отмычка (Предупреждение)') then offfastmenuchat = lua_thread.create(function() warnotm(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Решётка') then offfastmenuchat = lua_thread.create(function() reshotka(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Стол') then offfastmenuchat = lua_thread.create(function() stol(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'Стол (Адвокат)') then offfastmenuchat = lua_thread.create(function() stoladv(id) end) fastmenus.v = false end
-            end
-            if imgui.CollapsingHeader(u8'Команды') then
-                if imgui.MenuItem('/cuff') then offfastmenuchat = lua_thread.create(function() cuff(id) end) fastmenus.v = false end
-                if imgui.MenuItem('/uncuff') then offfastmenuchat = lua_thread.create(function() uncuff(id) end) fastmenus.v = false end
-                if imgui.MenuItem('/hold') then sampProcessChatInput('/hold '..id) fastmenus.v = false end
-                if imgui.MenuItem('/jd') then offfastmenuchat = lua_thread.create(function() jd() end) fastmenus.v = false end
-            end
-            if imgui.CollapsingHeader(u8'КПЗ') then
-                if imgui.MenuItem(u8'КПЗ') then offfastmenuchat = lua_thread.create(function() kpz(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'КПЗ - врем') then offfastmenuchat = lua_thread.create(function() kpzvrem(id) end) fastmenus.v = false end
-                if imgui.MenuItem(u8'КПЗ - кон') then offfastmenuchat = lua_thread.create(function() kpzvrem(id) end) fastmenus.v = false end
-            end
-            if imgui.CollapsingHeader(u8'Быстрый репорт (Нон рп)') then
-                if imgui.MenuItem(u8'ДМ КПЗ') then SendReport(string.format('%s[%d] ДМит в КПЗ', name, id)) fastmenus.v = false end
-                if imgui.MenuItem(u8'Сбивы анимаций') then SendReport(string.format('%s[%d] сбивает анимации в КПЗ', name, id)) fastmenus.v = false end
-                if imgui.MenuItem(u8'АФК от /hold') then SendReport(string.format('%s[%d] AFK от /hold', name, id)) fastmenus.v = false end
-                if imgui.MenuItem(u8'Нон РП анимации') then SendReport(string.format('%s[%d] НРП анимации', name, id)) fastmenus.v = false end
-                if imgui.MenuItem(u8'Нон РП поведение') then SendReport(string.format('%s[%d] НРП поведение', name, id)) fastmenus.v = false end
-            end
-            if imgui.CollapsingHeader(u8'Быстрый репорт (Чат)') then
-                if imgui.MenuItem(u8'Оскорбления / маты') then SendReport(string.format('%s[%d] оск + маты', name, id)) fastmenus.v = false end
-                if imgui.MenuItem(u8'Флуд') then SendReport(string.format('%s[%d] флуд', name, id)) fastmenus.v = false end
-                if imgui.MenuItem(u8'НРП /me') then SendReport(string.format('%s[%d] НРП /me', name, id)) fastmenus.v = false end
-            end
-            if imgui.CollapsingHeader(u8'Быстрый репорт (Своя причина)') then
-				imgui.Text(u8'Вводите только причину жалобы.')
-				imgui.Text(u8'Ник и ID будут автоматически отправлены.\n')
-				imgui.InputText(u8'Введите текст жалобы', jbsuka)
-				imgui.Text(name..'['..id..'] '..jbsuka.v)
-				if imgui.MenuItem(u8'Отправить жалобу (x2 Enter)') then if #jbsuka.v >1 and jbsuka.v ~= '' and jbsuka.v ~= ' ' and jbsuka.v ~= '  ' then sampAddChatMessage(jbsuka.v, -1) else sampAddChatMessage(teg..'Вы ничего не ввели', -1) end end --SendReportDialog(id, name, u8:decode(jbsuka.v)) jbsuka.v = nil fastmenus.v = false end
-				if isKeyJustPressed(VK_RETURN) then SendReportDialog(id, name, u8:decode(jbsuka.v)) jbsuka.v = nil fastmenus.v = false end
-			end
-            imgui.End()
-        end
-    end
-
-
-    if grafeks.v then
-        if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then grafeks.v = false end
-        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(500, 500), imgui.Cond.FirstUseEver)
-        imgui.Begin(u8'График тюрьмы', grafeks, imgui.WindowFlags.NoSavedSettings)
-        imgui.CenterTextColoredRGB(rasp)
-        imgui.End()
-    end
-
-    if prishelp.v then
-        if isKeyJustPressed(0x1B) or isKeyJustPressed(0x08) or isKeyJustPressed(0x0D) then prishelp.v = false end
-        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(530, 450), imgui.Cond.FirstUseEver)
-        imgui.Begin(u8'Помощь по PrisonHelper', prishelp, imgui.WindowFlags.NoSavedSettings)
-        imgui.CenterTextColoredRGB(ph)
-        imgui.End()
-    end
-
-
-    if imguilec.v then
-        imgui.SetNextWindowPos(imgui.ImVec2(sw / 2, sh / 2), imgui.Cond.FirstUseEver, imgui.ImVec2(0.5, 0.5))
-        imgui.SetNextWindowSize(imgui.ImVec2(500, 300), imgui.Cond.FirstUseEver)
-        imgui.Begin(u8'[PrisonHelper] Лекции для заключённых', imguilec, imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
-        if imgui.CollapsingHeader(u8'1. Время') then
-            if imgui.MenuItem(u8'Время начало', btn_size) then offsendchat = lua_thread.create(function() vremnach() end) imguilec.v = false end
-            if imgui.MenuItem(u8'Время конец', btn_size) then offsendchat = lua_thread.create(function() vremkon() end) imguilec.v = false end
-        end
-        if imgui.CollapsingHeader(u8'2. Уборка') then
-            if imgui.MenuItem(u8'Уборка и завтрак начало', btn_size) then offsendchat = lua_thread.create(function() ubornach(0) end) imguilec.v = false end
-            if imgui.MenuItem(u8'Уборка и завтрак конец', btn_size) then offsendchat = lua_thread.create(function() uborkon(0) end) imguilec.v = false end
-            if imgui.MenuItem(u8'Уборка всей тюрьмы начало', btn_size) then offsendchat = lua_thread.create(function() ubornach(1) end) imguilec.v = false end
-            if imgui.MenuItem(u8'Уборка всей тюрьмы конец', btn_size) then offsendchat = lua_thread.create(function() uborkon(1) end) imguilec.v = false end
-        end
-        if imgui.CollapsingHeader(u8'3. Спортзал') then
-            if imgui.MenuItem(u8'Спорзал начало', btn_size) then offsendchat = lua_thread.create(function() sportnach() end) imguilec.v = false end
-            if imgui.MenuItem(u8'Спорзал конец', btn_size) then offsendchat = lua_thread.create(function() sportkon() end) imguilec.v = false end
-        end
-        if imgui.CollapsingHeader(u8'4. Ужин') then
-            if imgui.MenuItem(u8'Ужин начало', btn_size) then offsendchat = lua_thread.create(function() uzhinnach() end) imguilec.v = false end
-            if imgui.MenuItem(u8'Ужин конец', btn_size) then offsendchat = lua_thread.create(function() uzhinkon() end) imguilec.v = false end
-        end
-        if imgui.CollapsingHeader(u8'5. Обед') then
-            if imgui.MenuItem(u8'Обед начало', btn_size) then offsendchat = lua_thread.create(function() obednach() end) imguilec.v = false end
-            if imgui.MenuItem(u8'Обед конец', btn_size) then offsendchat = lua_thread.create(function() obedkon() end) imguilec.v = false end
-        end
-        imgui.End()
+function SE.onSetCheckpoint(position, radius)
+    --if tpfindresult and position.z < 50 then print(string.format('X: %d, Y: %d, Z: %d', position.x, position.y, position.z)) end
+    if tpfindresult and position.z < 500 then
+        setCharCoordinates(PLAYER_PED, position.x, position.y, position.z)
+        print(string.format('X: %d, Y: %d, Z: %d', position.x, position.y, position.z))
+        tpfindresult = false
+    elseif tpfindresult and position.z > 500 then
+        sampAddChatMessage(teg ..'Возможно игрок находится в инте. Нажмите {FF7000}Y{FFFFFF} для продолжения или {FF7000}N{FFFFFF} для отклонения', - 1)
+        rkeys.registerHotKey({vkeys.VK_Y}, true, function() setCharCoordinates(PLAYER_PED, position.x, position.y, position.z)
+            print(string.format('X: %d, Y: %d, Z: %d', position.x, position.y, position.z))
+            rkeys.unRegisterHotKey({vkeys.VK_Y})
+        rkeys.unRegisterHotKey({vkeys.VK_N}) end)
+        rkeys.registerHotKey({vkeys.VK_N}, true, function()
+            sampAddChatMessage(teg ..'Отклонено', - 1)
+            rkeys.unRegisterHotKey({vkeys.VK_Y})
+        rkeys.unRegisterHotKey({vkeys.VK_N}) end)
+        tpfindresult = false
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -965,102 +587,6 @@ function ShowHelpMarker(text)
     end
 end
 
-
-function napominalka()
-	while true do wait(0)
-		local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
-		local dt = os.date("*t", os.time(dt))
-		-- Напоминание о расписании КПЗ
-		if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
-			if dt.hour == 22 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Отбой', 0x01A0E9) wait(1000) end
-			if dt.hour == 7 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Подъем, завтрак и уборка камер', 0x01A0E9) wait(1000) end
-			if dt.hour == 9 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-			if dt.hour == 10 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Готовка еды и уборка двора', 0x01A0E9) wait(1000) end
-			if dt.hour == 13 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Обед', 0x01A0E9) wait(1000) end
-			if dt.hour == 14 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-			if dt.hour == 15 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка двора и готовка еды', 0x01A0E9) wait(1000) end
-			if dt.hour == 17 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Тренировка в зале', 0x01A0E9) wait(1000) end
-			if dt.hour == 19 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Ужин', 0x01A0E9) wait(1000) end
-			if dt.hour == 20 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-			if dt.hour == 21 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка всей тюрьмы', 0x01A0E9) wait(1000) end
-		elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
-			if dt.hour == 20 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Отбой. Разогнать по камерам', 0x01A0E9) wait(1000) end
-			if dt.hour == 7 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Подъем, завтрак и уборка камер', 0x01A0E9) wait(1000) end
-			if dt.hour == 9 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-			if dt.hour == 10 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Готовка еды и уборка двора', 0x01A0E9) wait(1000) end
-			if dt.hour == 12 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Обед', 0x01A0E9) wait(1000) end
-			if dt.hour == 13 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-			if dt.hour == 14 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка двора и готовка еды', 0x01A0E9) wait(1000) end
-			if dt.hour == 16 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Тренировка в зале', 0x01A0E9) wait(1000) end
-			if dt.hour == 17 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Ужин', 0x01A0E9) wait(1000) end
-			if dt.hour == 18 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Свободное время', 0x01A0E9) wait(1000) end
-			if dt.hour == 19 and dt.min == 1 and dt.sec == 1 then sampAddChatMessage('[Расписание] {d5dedd}Уборка всей тюрьмы', 0x01A0E9) wait(1000) end
-		end
-	end
-end
-
-
-function grafiktimes()
-	local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
-	local dt = os.date("*t", os.time(dt))
-	-- Напоминание о расписании КПЗ
-	if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
-		if dt.hour >= 22 and dt.hour <= 6 then graf = '[Расписание] {d5dedd}Отбой' return graf end
-		if dt.hour >= 7 and dt.hour <= 8 then graf = '[Расписание] {d5dedd}Подъем, завтрак и уборка камер' return graf end
-		if dt.hour == 9 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-		if dt.hour >= 10 and dt.hour <= 12 then graf = '[Расписание] {d5dedd}Готовка еды и уборка двора' return graf end
-		if dt.hour == 13 then graf = '[Расписание] {d5dedd}Обед' return graf end
-		if dt.hour == 14 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-		if dt.hour >= 15 and dt.hour <= 16 then  graf = '[Расписание] {d5dedd}Уборка двора и готовка еды' return graf end
-		if dt.hour >= 17 and dt.hour <= 18 then graf = '[Расписание] {d5dedd}Тренировка в зале' return graf end
-		if dt.hour == 19 then graf = '[Расписание] {d5dedd}Ужин' return graf end
-		if dt.hour == 20 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-		if dt.hour == 21 then graf = '[Расписание] {d5dedd}Уборка всей тюрьмы' return graf end
-	elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
-		if dt.hour >= 20 and dt.hour <= 6 then graf = '[Расписание] {d5dedd}Отбой. Разогнать по камерам' return graf end
-		if dt.hour >= 7 and dt.hour <= 8 then graf = '[Расписание] {d5dedd}Подъем, завтрак и уборка камер' return graf end
-		if dt.hour == 9 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-		if dt.hour >= 10 and dt.hour <= 11 then graf = '[Расписание] {d5dedd}Готовка еды и уборка двора' return graf end
-		if dt.hour == 12 then graf = '[Расписание] {d5dedd}Обед' return graf end
-		if dt.hour == 13 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-		if dt.hour >= 14 and dt.hour <= 15 then graf = '[Расписание] {d5dedd}Уборка двора и готовка еды' return graf end
-		if dt.hour == 16 then graf = '[Расписание] {d5dedd}Тренировка в зале' return graf end
-		if dt.hour == 17 then graf = '[Расписание] {d5dedd}Ужин' return graf end
-		if dt.hour == 18 then graf = '[Расписание] {d5dedd}Свободное время' return graf end
-		if dt.hour >= 19 and dt.hour < 22 then graf = '[Расписание] {d5dedd}Уборка всей тюрьмы' return graf end
-	end
-end
-
-function grafiktimesoverlay()
-	local dt = os.date("*t"); systime = dt.hour dt.hour = dt.hour - pris.hour
-	local dt = os.date("*t", os.time(dt))
-	-- Напоминание о расписании КПЗ
-	if dt.wday == 1 or dt.wday == 7 then -- Суббота - Воскресенье
-		if dt.hour >= 22 and dt.hour <= 6 then graf = 'Отбой' return graf end
-		if dt.hour >= 7 and dt.hour <= 8 then graf = 'Подъем, завтрак и уборка камер' return graf end
-		if dt.hour == 9 then graf = 'Свободное время' return graf end
-		if dt.hour >= 10 and dt.hour <= 12 then graf = 'Готовка еды и уборка двора' return graf end
-		if dt.hour == 13 then graf = 'Обед' return graf end
-		if dt.hour == 14 then graf = 'Свободное время' return graf end
-		if dt.hour >= 15 and dt.hour <= 16 then  graf = 'Уборка двора и готовка еды' return graf end
-		if dt.hour >= 17 and dt.hour <= 18 then graf = 'Тренировка в зале' return graf end
-		if dt.hour == 19 then graf = 'Ужин' return graf end
-		if dt.hour == 20 then graf = 'Свободное время' return graf end
-		if dt.hour == 21 then graf = 'Уборка всей тюрьмы' return graf end
-	elseif dt.wday > 1 and dt.wday < 7 then -- Понедельник - Пятница
-		if dt.hour >= 20 and dt.hour <= 6 then graf = 'Отбой. Разогнать по камерам' return graf end
-		if dt.hour >= 7 and dt.hour <= 8 then graf = 'Подъем, завтрак и уборка камер' return graf end
-		if dt.hour == 9 then graf = 'Свободное время' return graf end
-		if dt.hour >= 10 and dt.hour <= 11 then graf = 'Готовка еды и уборка двора' return graf end
-		if dt.hour == 12 then graf = 'Обед' return graf end
-		if dt.hour == 13 then graf = 'Свободное время' return graf end
-		if dt.hour >= 14 and dt.hour <= 15 then graf = 'Уборка двора и готовка еды' return graf end
-		if dt.hour == 16 then graf = 'Тренировка в зале' return graf end
-		if dt.hour == 17 then graf = 'Ужин' return graf end
-		if dt.hour == 18 then graf = 'Свободное время' return graf end
-		if dt.hour >= 19 and dt.hour < 22 then graf = 'Уборка всей тюрьмы' return graf end
-	end
-end
 
 
 local encoding = require 'encoding'
@@ -1125,47 +651,6 @@ function imgui.CenterTextColoredRGB(text)
 end
 
 
-function submenus_show(menu, caption, select_button, close_button, back_button)
-	select_button, close_button, back_button = select_button or 'Select', close_button or 'Close', back_button or 'Back'
-	prev_menus = {}
-	function display(menu, id, caption)
-		local string_list = {}
-		for i, v in ipairs(menu) do
-			table.insert(string_list, type(v.submenu) == 'table' and v.title .. '  >>' or v.title)
-		end
-		sampShowDialog(id, caption, table.concat(string_list, '\n'), select_button, (#prev_menus > 0) and back_button or close_button, sf.DIALOG_STYLE_LIST)
-		repeat
-			wait(0)
-			local result, button, list = sampHasDialogRespond(id)
-			if result then
-				if button == 1 and list ~= -1 then
-					local item = menu[list + 1]
-					if type(item.submenu) == 'table' then -- submenu
-						table.insert(prev_menus, {menu = menu, caption = caption})
-						if type(item.onclick) == 'function' then
-							item.onclick(menu, list + 1, item.submenu)
-						end
-						return display(item.submenu, id + 1, item.submenu.title and item.submenu.title or item.title)
-					elseif type(item.onclick) == 'function' then
-						local result = item.onclick(menu, list + 1)
-						if not result then return result end
-						return display(menu, id, caption)
-					end
-				else -- if button == 0
-					if #prev_menus > 0 then
-						local prev_menu = prev_menus[#prev_menus]
-						prev_menus[#prev_menus] = nil
-						return display(prev_menu.menu, id - 1, prev_menu.caption)
-					end
-					return false
-				end
-			end
-		until result
-	end
-	return display(menu, 31337, caption or menu.title)
-end
-
-
 
 function async_http_request(method, url, args, resolve, reject)
 	local request_lane = lanes.gen('*', {package = {path = package.path, cpath = package.cpath}}, function()
@@ -1197,6 +682,14 @@ function async_http_request(method, url, args, resolve, reject)
 	end)
 end
 
+
+
+function getTargetBlipCoordinatesFixed()
+    local bool, x, y, z = getTargetBlipCoordinates(); if not bool then return false end
+    requestCollision(x, y); loadScene(x, y, z)
+    local bool, x, y, z = getTargetBlipCoordinates()
+    return bool, x, y, z
+end
 
 
 function apply_custom_style()
