@@ -31,6 +31,7 @@ assert(errr, 'Library Pie Menu not found')
 
 local errr, notf = pcall(import, 'imgui_notf.lua')
 assert(errr, 'Library Imgui Notification not found')
+local idnotf = script.find('imgui_notf.lua')
 
 encoding.default = 'CP1251'
 u8 = encoding.UTF8
@@ -711,6 +712,7 @@ varns = {}
 function overlaysuka()
 	pris.astoverlay = not pris.astoverlay
 	sampAddChatMessage(string.format('%s %s',teg, pris.astoverlay and 'Оверлей включён' or 'Оверлей выключен'), -1)
+	inicfg.save(default, 'PrisonHelper')
 end
 
 
@@ -809,7 +811,7 @@ function imgui.OnDrawFrame()
         imgui.SetNextWindowSize(imgui.ImVec2(220, 52), imgui.Cond.FirstUseEver)
         imgui.Begin('Overlay', _, imgui.WindowFlags.NoTitleBar + imgui.WindowFlags.NoResize + imgui.WindowFlags.NoSavedSettings + imgui.WindowFlags.AlwaysAutoResize)
         --imgui.ShowCursor = false
-        grafek = grafiktimesoverlay()
+        local grafek = grafiktimesoverlay()
 		imgui.CenterTextColoredRGB('{01A0E9}PrisonHelper')
 		imgui.Separator()
         imgui.Text(u8(grafek)) -- простой текст внутри этого окна
@@ -956,6 +958,11 @@ end
 
 
 
+function onScriptTerminate(script, quitGame)
+	if script == idnotf then
+		lua_thread.create(function() wait(10) notf = import 'imgui_notf.lua' notf.addNotification('PrisonHelper успешно загружен\n\nВерсия скрипта: '..thisScript().version, 5) end)
+	end
+end
 
 function ShowHelpMarker(text)
 	imgui.SameLine()
