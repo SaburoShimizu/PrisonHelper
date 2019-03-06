@@ -692,19 +692,19 @@ function pluswarn(id)
 	local name = sampGetPlayerNickname(id)
 	if varns[name] ~= nil then varns[name] = varns[name] + 1 else varns[name] = 1 end
 	checkwarn(name)
-	notf.addNotification(string.format('Выдано предупреждение заключённому\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
+	notf.addNotification(string.format('Выдано предупреждение заключённому\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8, 1)
 end
 
 function minuswarn(id, name)
 	if varns[name] ~= nil and varns[name] > 0 then varns[name] = varns[name] - 1 else varns[name] = nil end
 	checkwarn(name)
-	notf.addNotification(string.format('Снято предупреждение заключённого\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
+	notf.addNotification(string.format('Снято предупреждение заключённого\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8, 1)
 end
 
 function minusallwarn(id, name)
 	if varns[name] ~= nil and varns[name] > 0 then varns[name] = 0 else varns[name] = nil end
 	checkwarn(name)
-	notf.addNotification(string.format('Сняты все предупреждения\nзаключённого\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8)
+	notf.addNotification(string.format('Сняты все предупреждения\nзаключённого\n\nНик: %s[%d]\nПредупреждения: %d', name, id, varns[name]), 8, 1)
 end
 
 varns = {}
@@ -960,7 +960,7 @@ end
 
 function onScriptTerminate(script, quitGame)
 	if script == idnotf then
-		lua_thread.create(function() wait(10) notf = import 'imgui_notf.lua' notf.addNotification('PrisonHelper успешно загружен\n\nВерсия скрипта: '..thisScript().version, 5) end)
+		lua_thread.create(function() wait(10) notf = import 'imgui_notf.lua' notf.addNotification('PrisonHelper успешно загружен\n\nВерсия скрипта: '..thisScript().version, 5, 2) end)
 	end
 end
 
